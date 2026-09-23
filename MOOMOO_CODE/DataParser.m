@@ -1,7 +1,7 @@
 % Author: Jiale Jiang
 % Editor: Jiale Jiang(self-edited)
 %% 1. Data Parsing
-
+% emily happy seeing 
 % a.
 % load data from previously saved workspace
 % the data was imported as numerical matrix, following data parsing can
