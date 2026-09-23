@@ -127,7 +127,7 @@ JettaData{1}.ave_decel = mean(JettaData{1}.Acceleration_fts2(65:151,1));
 [JettaData{1}.max_speed, max_index] = ...
     max(JettaData{1}.VehicleSpeed_MPH);
 JettaData{1}.time_at_max_speed = JettaData{1}.Time_sec(max_index);
-
+plot(JettaData{1}.Time_sec,JettaData{1}.VehicleSpeed_MPH);
 %%
 JettaData{1}.ave_fuel_rate = ...
     JettaData{1}.TripFuel_gal(end)/JettaData{1}.TripDistance_mile(end);

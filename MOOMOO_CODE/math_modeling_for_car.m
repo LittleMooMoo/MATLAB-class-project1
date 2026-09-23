@@ -195,3 +195,4 @@ title("cumulated fuel used vs time");
 xlabel("Time (s)");
 ylabel("Fuel used (gal)");
 fprintf("Total Fuel used: %.6f gal\n",cumulated_fuel_used(end));
+
