@@ -1,32 +1,41 @@
 % Author: Jiale Jiang
 % Editor: Jiale Jiang(self-edited)
 %% 1. Data Parsing
-% emily happy seeing 
+
 % a.
 % load data from previously saved workspace
 % the data was imported as numerical matrix, following data parsing can
 % help our code to be way easier to work with and more human readable;
 
-load("C:\Users\jiaxi\OneDrive\Documentos\MATLAB\Epic_Quest_1_Data_Import\MOOMOO_CODE\CarOBD2data.mat");
+load("JettaData.mat","CamryData.mat");
 % b.
 % create a cell containing 3 raw data matricies
 RawJettaData = {Jetta1, Jetta2, Jetta3};
+RawCamryData = {CamryData1 CamryData2 CamryData3};
 
 % create a vector of string names for struct name parsing
 newNameJetta = ["Time_sec", "TripDistance_mile", "VehicleSpeed_MPH", ...
     "Acceleration_fts2", "TripFuel_gal", "TotalFuelEcon_MPG", ...
     "InstantFuelEcon_MPG", "EngineRPM_rpm"];
+newNameCamry = ["Time_sec","EngineRPM_rpm","VehicleSpeed_MPH",...
+    "FuelRate_lb_per_min"];
 % c.
 % parse raw data into two cells;
 JettaData = parsingData(newNameJetta,RawJettaData);
+CamryData = parsingData(newNameCamry,RawCamryData);
 
+% unit conversion
+JettaData = convertUnits(JettaData);
+CamryData = convertUnits(CamryData);
 %% 2. Compute Data Sampling Frequency
 
 % a. Frequency calculation
 JettaTimeData = cell(1,3);
+CamryTimeData = cell(1,3);
 
 for i = 1:3
     JettaTimeData{i} = calculateTimeData(JettaData{i}.Time_sec);
+    CamryTimeData{i} = calculateTimeData(CamryData{i}.Time_sec);
 end
 
 %% 3. Data Presentation as table output in MATLAB terminal
@@ -37,6 +46,7 @@ end
 %                 3)Once reach 35 mph,deccelerate the car to 0 mph safely;
 
 printJettaDataTable(JettaData);
+printCamryDataTable(CamryData);
 %% 4. Helper Function Declaration
 
 % this function takes in a string vector, and a cell
@@ -84,13 +94,43 @@ function table = printJettaDataTable(Datacell)
     end
 end
 
+function table = printCamryDataTable(Datacell)
+    for i = 1:size(Datacell,2)
+        fprintf("\nCamry Trial %d\n",i);
+        fprintf("%5s %12s %12s %12s \n", ...
+    "Time(s)","RPM", "Speed(MPH)", "Fuel Rate(lb per min)");
+
+        table = [Datacell{i}.Time_sec,...
+                Datacell{i}.EngineRPM_rpm, ...
+                Datacell{i}.VehicleSpeed_MPH,...
+                Datacell{i}.FuelRate_lb_per_min];
+        fprintf("%5.3f %12.2f %12.4f %12.5f\n", table.');
+    end
+end
+
 % prints the sampling frequency of the 3 trials
 fprintf("Average sampling frequency for Jetta trials 1-3:" + ...
     "[%.2f,%.2f,%.2f] Hz\n",[JettaTimeData{1}.aveFrequency,...
     JettaTimeData{2}.aveFrequency,...
     JettaTimeData{3}.aveFrequency]);
- 
+ fprintf("Average sampling frequency for Camry trials 1-3:" + ...
+    "[%.2f,%.2f,%.2f] Hz\n",[CamryTimeData{1}.aveFrequency,...
+    CamryTimeData{2}.aveFrequency,...
+    CamryTimeData{3}.aveFrequency]);
 
+% unit conversion function 
+function Datacell_unit_converted = convertUnits(Datacell)
+    for i = 1:length(Datacell)
+        Datacell{i}.speed_fts = ...
+            Datacell{i}.VehicleSpeed_MPH .* 5280 ./ 3600;
+        if ~isfield(Datacell{i}, 'FuelRate_lb_per_min')
+        continue; 
+        end
+        Datacell{i}.fuelrate_lbs = ...
+        Datacell{i}.FuelRate_lb_per_min ./60;
+    end
+        Datacell_unit_converted = Datacell;
+end
 %% fit the rpm vs time for jetta 1;
 JettaData{1}.idle_rpm_ave = mean(JettaData{1}.EngineRPM_rpm(1:11,1));
 fprintf("idle rpm: %.2f\n",JettaData{1}.idle_rpm_ave);
@@ -132,6 +172,6 @@ plot(JettaData{1}.Time_sec,JettaData{1}.VehicleSpeed_MPH);
 JettaData{1}.ave_fuel_rate = ...
     JettaData{1}.TripFuel_gal(end)/JettaData{1}.TripDistance_mile(end);
 fprintf("trip fuel ave: %.8f gal \n",JettaData{1}.ave_fuel_rate);
-
 %%
-save("CarOBD2data.mat");
+save("JettaData.mat");
+save("CamryData.mat");
