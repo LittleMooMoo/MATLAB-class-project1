@@ -7,7 +7,9 @@
 % the data was imported as numerical matrix, following data parsing can
 % help our code to be way easier to work with and more human readable;
 
-load("JettaData.mat","CamryData.mat");
+load("JettaData.mat");
+load("CamryData.mat");
+
 % b.
 % create a cell containing 3 raw data matricies
 RawJettaData = {Jetta1, Jetta2, Jetta3};
@@ -167,11 +169,171 @@ JettaData{1}.ave_decel = mean(JettaData{1}.Acceleration_fts2(65:151,1));
 [JettaData{1}.max_speed, max_index] = ...
     max(JettaData{1}.VehicleSpeed_MPH);
 JettaData{1}.time_at_max_speed = JettaData{1}.Time_sec(max_index);
-plot(JettaData{1}.Time_sec,JettaData{1}.VehicleSpeed_MPH);
+
 %%
-JettaData{1}.ave_fuel_rate = ...
-    JettaData{1}.TripFuel_gal(end)/JettaData{1}.TripDistance_mile(end);
-fprintf("trip fuel ave: %.8f gal \n",JettaData{1}.ave_fuel_rate);
+pass_band = 8;
+sampling_speed = 30;
+
+for i = 1:3
+    CamryData{i}.speed_fts_filtered = ...
+        lowpass(CamryData{i}.speed_fts,pass_band,sampling_speed);
+    CamryData{i}.acceleration_fts2 =...
+        gradient(CamryData{i}.speed_fts,CamryData{i}.Time_sec);
+    CamryData{i}.accel_fts2_filtered =...
+        gradient(CamryData{i}.speed_fts_filtered,CamryData{i}.Time_sec);
+end
+subplot(2,2,1);
+plot(CamryData{1}.Time_sec,CamryData{1}.speed_fts,"b","LineWidth",1.5);
+legend("speed fts");
+ylabel("speed(ft/s)");
+xlabel("time(sec)");
+grid on;
+
+%%
+function [speed_KF, accel_KF] = simpleKalman(t, v, sigmaV, q)
+    t = t(:);
+    v = v(:);
+
+    assert(numel(t) == numel(v) && numel(t) >= 2);
+    assert(all(isfinite(t)) && all(isfinite(v)));
+    assert(all(diff(t) > 0), "Check timestamps first.");
+    assert(sigmaV > 0 && q > 0);
+
+    R = sigmaV^2;             % Speed measurement variance: (ft/s)^2
+    H = [1, 0];              % We measure speed, not acceleration
+
+    state = [v(1); 0];       % Initial acceleration guess: 0 ft/s^2
+    P = diag([R, 10^2]);     % Initial uncertainty in speed/acceleration
+
+    history = zeros(2, numel(t));
+    history(:,1) = state;
+
+    for k = 2:numel(t)
+        dt = t(k) - t(k-1);
+
+        F = [1, dt; 0, 1];
+
+        % Acceleration changes driven by white jerk.
+        % q has units ft^2/s^5.
+        Q = q * [dt^3/3, dt^2/2; dt^2/2, dt];
+
+        % Predict
+        state = F * state;
+        P = F * P * F.' + Q;
+
+        % Correct using measured speed
+        K = P * H.' / (H * P * H.' + R);
+        state = state + K * (v(k) - H * state);
+
+        A = eye(2) - K * H;
+        P = A * P * A.' + K * R * K.';
+
+        history(:,k) = state;
+    end
+
+    speed_KF = history(1,:).';
+    accel_KF = history(2,:).';
+end
+
+sigmaV = 1;   % Assumed speed uncertainty: 1 ft/s
+q = 1;        % Starting tuning value, not calibrated
+
+for i = 1:numel(CamryData)
+    [CamryData{i}.speed_fts_KF, CamryData{i}.accel_fts2_KF] = ...
+        simpleKalman(CamryData{i}.Time_sec, ...
+                     CamryData{i}.speed_fts, sigmaV, q);
+end
+
+subplot(2,2,2);
+plot(CamryData{1}.Time_sec, ...
+     CamryData{1}.acceleration_fts2(:),"b","LineWidth", 1.5);
+hold on;
+plot(CamryData{1}.Time_sec, ...
+     CamryData{1}.accel_fts2_filtered(:),"r","LineWidth", 1.5);
+plot(CamryData{1}.Time_sec, ...
+     CamryData{1}.accel_fts2_KF(:),"g","LineWidth", 1.5);
+xlabel("Time (s)");
+ylabel("Acceleration (ft/s^2)");
+legend("Raw derivative", "Low-pass derivative", ...
+       "Kalman estimate", "Location", "best");
+title("Acceleration estimate comparison");
+hold off;
+grid on;
+
+subplot(2,2,3);
+t = CamryData{1}.Time_sec(:);
+v = CamryData{1}.speed_fts(:);
+
+idx_accel = 67:288;
+idx_decel = 289:481;
+
+% Average acceleration from the endpoints of each selected interval.
+estimated_accel = ...
+    (v(idx_accel(end)) - v(idx_accel(1))) / ...
+    (t(idx_accel(end)) - t(idx_accel(1)));
+
+estimated_decel = ...
+    (v(idx_decel(end)) - v(idx_decel(1))) / ...
+    (t(idx_decel(end)) - t(idx_decel(1)));
+
+a_raw = CamryData{1}.acceleration_fts2(:);
+a_lowpass = CamryData{1}.accel_fts2_filtered(:);
+
+% Rows: acceleration / braking. Columns: raw / low-pass.
+deviation_MSE = [
+    mean((a_raw(idx_accel) - estimated_accel).^2), ...
+    mean((a_lowpass(idx_accel) - estimated_accel).^2);
+
+    mean((a_raw(idx_decel) - estimated_decel).^2), ...
+    mean((a_lowpass(idx_decel) - estimated_decel).^2)
+];
+a_KF = CamryData{1}.accel_fts2_KF(:);
+
+deviation_MSE(:,3) = [
+    mean((a_KF(idx_accel) - estimated_accel).^2);
+    mean((a_KF(idx_decel) - estimated_decel).^2)
+];
+bar(deviation_MSE);
+xticks(1:2);
+xticklabels(["Accelerating", "Braking"]);
+legend("Raw", "Low-pass", "Kalman", "Location", "best");
+ylabel("Mean squared deviation [(ft/s^2)^2]");
+title("Deviation from each interval's average acceleration");
+grid on;
+
+t = CamryData{1}.Time_sec(:);
+idx_accel = 67:288;
+idx_decel = 289:481;
+
+acceleration = [
+    CamryData{1}.acceleration_fts2(:), ...
+    CamryData{1}.accel_fts2_filtered(:), ...
+    CamryData{1}.accel_fts2_KF(:)
+];
+
+% Time-weighted averages, accounting for timestamp spacing.
+avg_accel = trapz(t(idx_accel), acceleration(idx_accel,:), 1) ...
+    / (t(idx_accel(end)) - t(idx_accel(1)));
+
+avg_decel = trapz(t(idx_decel), acceleration(idx_decel,:), 1) ...
+    / (t(idx_decel(end)) - t(idx_decel(1)));
+
+methods = ["Raw", "Low-pass", "Kalman"];
+
+fprintf("\n%-12s %20s %20s\n", ...
+    "Method", "Avg accel (ft/s^2)", "Avg decel (ft/s^2)");
+
+for k = 1:3
+    fprintf("%-12s %20.4f %20.4f\n", ...
+        methods(k), avg_accel(k), avg_decel(k));
+end
+
+subplot(2,2,4);
+plot(CamryData{1}.Time_sec,CamryData{1}.accel_fts2_KF,"m","LineWidth",1.5);
+title("Kalman Filtered Acceleration fts2");
+xlabel("time(sec)");
+ylabel("acceleration(ft/s2)");
+grid on;
 %%
 save("JettaData.mat");
 save("CamryData.mat");
