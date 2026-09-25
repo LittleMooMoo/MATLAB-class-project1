@@ -1,0 +1,223 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      -->
+<title>Math modeling 2</title>
+<meta name="generator" content="MATLAB 24.2">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2026-09-23">
+<meta name="DC.source" content="Math_modeling2.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+</head>
+<body>
+<div class="content">
+<h1>Math modeling 2</h1>
+<pre class="codeinput">
+<span class="keyword">function</span> motion = Motion(time,state,a,x0,v0)
+    time = time - time(1); <span class="comment">% Elapsed time since this segment began</span>
+    motion = struct();
+    k_rpm = 1; <span class="comment">% Estimated model coefficient; units: rpm/ft</span>
+    <span class="keyword">if</span> state == <span class="string">"ACCEL"</span>
+        motion.distance = x0 + v0 .* time + <span class="keyword">...</span>
+            0.5 .* a .* time.^2;
+        motion.velocity = v0 + a .* time;
+        motion.acceleration = a * ones(size(time));
+        motion.rpm = k_rpm .* 5.5.*a .*time.^2 + 888;
+    <span class="keyword">end</span>
+     <span class="keyword">if</span> state == <span class="string">"DECEL"</span>
+        motion.distance = x0+v0 .* time - 0.5 .* a .* time.^2;
+        motion.velocity = v0 -a .* time;
+        motion.acceleration = -a .* ones(size(time));
+        motion.rpm = -k_rpm .* 5.5 .*a .*time.^2 + 888;
+     <span class="keyword">end</span>
+      <span class="keyword">if</span> state == <span class="string">"IDLE"</span>
+        motion.distance = x0 + zeros(size(time));
+        motion.velocity = v0+ zeros(size(time));
+        motion.acceleration = zeros(size(time));
+        motion.rpm = 0;
+      <span class="keyword">end</span>
+      <span class="keyword">if</span> state == <span class="string">"HOLDSPEED"</span>
+        motion.distance = x0 + v0 .* time;
+        motion.velocity = v0 .* ones(size(time));
+        motion.acceleration = zeros(size(time));
+        motion.rpm = 0;
+      <span class="keyword">end</span>
+<span class="keyword">end</span>
+dt = 1/10;
+const_time = 30;
+time_accel = 15;
+const_accel = 20/time_accel;
+const_speed = 20;
+accel_fuel_rate = total_fuel/time_accel; <span class="comment">%gal/sec</span>
+total_fuel = 0.2;
+accel_fuel_over_time = total_fuel - total_fuel <span class="keyword">...</span>
+    .* exp(-accel_fuel_rate .* accel_time);
+
+const_motion_time = 0:dt:const_time;
+const_motion = Motion(const_motion_time,<span class="string">"HOLDSPEED"</span>,0,const_speed,1);
+const_motion.rpm = 888 .* ones(size(const_motion_time));
+
+accel_time = 0:dt:time_accel;
+accel_motion = Motion(accel_time,<span class="string">"ACCEL"</span>,const_accel,0,0);
+
+subplot(3,2,1);
+plot(const_motion_time,const_motion.distance,<span class="string">"r"</span>,<span class="string">"LineWidth"</span>,1.5);
+hold <span class="string">on</span>;
+plot(accel_time,accel_motion.distance,<span class="string">"b"</span>,<span class="string">"LineWidth"</span>,1.5);
+hold <span class="string">off</span>;
+
+subplot(3,2,2)
+plot(const_motion_time,const_motion.rpm,<span class="string">"g"</span>,<span class="string">"LineWidth"</span>,1.5);
+hold <span class="string">on</span>;
+plot(accel_time,accel_motion.rpm,<span class="string">"m"</span>,<span class="string">"LineWidth"</span>,1.5);
+hold <span class="string">off</span>;
+
+subplot(3,2,3);
+plot(accel_time,accel_fuel_over_time);
+</pre>
+<pre class="codeoutput error">Unrecognized function or variable 'total_fuel'.
+
+Error in Math_modeling2 (line 37)
+accel_fuel_rate = total_fuel/time_accel; %gal/sec
+                  ^^^^^^^^^^</pre>
+<p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2024b</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%% Math modeling 2
+function motion = Motion(time,state,a,x0,v0)
+    time = time - time(1); % Elapsed time since this segment began
+    motion = struct();
+    k_rpm = 1; % Estimated model coefficient; units: rpm/ft
+    if state == "ACCEL"
+        motion.distance = x0 + v0 .* time + ...
+            0.5 .* a .* time.^2;
+        motion.velocity = v0 + a .* time;
+        motion.acceleration = a * ones(size(time));
+        motion.rpm = k_rpm .* 5.5.*a .*time.^2 + 888;
+    end
+     if state == "DECEL"
+        motion.distance = x0+v0 .* time - 0.5 .* a .* time.^2;
+        motion.velocity = v0 -a .* time;
+        motion.acceleration = -a .* ones(size(time));
+        motion.rpm = -k_rpm .* 5.5 .*a .*time.^2 + 888;
+     end
+      if state == "IDLE"
+        motion.distance = x0 + zeros(size(time));
+        motion.velocity = v0+ zeros(size(time));
+        motion.acceleration = zeros(size(time));
+        motion.rpm = 0;
+      end
+      if state == "HOLDSPEED"
+        motion.distance = x0 + v0 .* time;
+        motion.velocity = v0 .* ones(size(time));
+        motion.acceleration = zeros(size(time));
+        motion.rpm = 0;
+      end
+end
+dt = 1/10;
+const_time = 30;
+time_accel = 15;
+const_accel = 20/time_accel;
+const_speed = 20;
+accel_fuel_rate = total_fuel/time_accel; %gal/sec
+total_fuel = 0.2;
+accel_fuel_over_time = total_fuel - total_fuel ...
+    .* exp(-accel_fuel_rate .* accel_time);
+
+const_motion_time = 0:dt:const_time;
+const_motion = Motion(const_motion_time,"HOLDSPEED",0,const_speed,1);
+const_motion.rpm = 888 .* ones(size(const_motion_time));
+
+accel_time = 0:dt:time_accel;
+accel_motion = Motion(accel_time,"ACCEL",const_accel,0,0);
+
+subplot(3,2,1);
+plot(const_motion_time,const_motion.distance,"r","LineWidth",1.5);
+hold on;
+plot(accel_time,accel_motion.distance,"b","LineWidth",1.5);
+hold off;
+
+subplot(3,2,2)
+plot(const_motion_time,const_motion.rpm,"g","LineWidth",1.5);
+hold on;
+plot(accel_time,accel_motion.rpm,"m","LineWidth",1.5);
+hold off;
+
+subplot(3,2,3);
+plot(accel_time,accel_fuel_over_time);
+
+
+##### SOURCE END #####
+-->
+</body>
+</html>
