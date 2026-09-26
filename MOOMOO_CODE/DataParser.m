@@ -1,14 +1,28 @@
 % Author: Jiale Jiang
 % Editor: Jiale Jiang(self-edited)
-%% 1. Data Parsing
+clearvars;
+load("JettaData.mat");
+load("CamryData.mat");
 
+plot_camry_accel = 0;
+plot_camry_vel = 0;
+plot_camry_filtered_vel = 0;
+plot_camry_pos = 0;
+
+plot_jetta_pos = 0;
+plot_jetta_vel = 0;
+plot_jetta_accel = 0;
+plot_jetta_filtered_accel = 1;
+plot_jetta_rpmtime = 0;
+plot_jetta_rpmvel_accel = 0;
+plot_jetta_rpmvel_decel = 0;
+plot_jetta_fuelratetime = 0;
+plot_jetta_fuelused = 0;
+%% 1. Data Parsing
 % a.
 % load data from previously saved workspace
 % the data was imported as numerical matrix, following data parsing can
 % help our code to be way easier to work with and more human readable;
-
-load("JettaData.mat");
-load("CamryData.mat");
 
 % b.
 % create a cell containing 3 raw data matricies
@@ -29,6 +43,13 @@ CamryData = parsingData(newNameCamry,RawCamryData);
 % unit conversion
 JettaData = convertUnits(JettaData);
 CamryData = convertUnits(CamryData);
+for i = 1:3
+    JettaData{i}.trip_distanceft = ...
+        JettaData{i}.TripDistance_mile  .* 5280;
+    JettaData{i}.instantFuelRategals = ...
+        (JettaData{i}.VehicleSpeed_MPH ./ ...
+        JettaData{i}.InstantFuelEcon_MPG)./3600;
+end
 %% 2. Compute Data Sampling Frequency
 
 % a. Frequency calculation
@@ -133,207 +154,264 @@ function Datacell_unit_converted = convertUnits(Datacell)
     end
         Datacell_unit_converted = Datacell;
 end
-%% fit the rpm vs time for jetta 1;
-JettaData{1}.idle_rpm_ave = mean(JettaData{1}.EngineRPM_rpm(1:11,1));
-fprintf("idle rpm: %.2f\n",JettaData{1}.idle_rpm_ave);
 
-JettaData{1}.non_idle_accel_rpm = ...
-    JettaData{1}.EngineRPM_rpm(12:64, 1);
-JettaData{1}.non_idle_decel_rpm = ...
-    JettaData{1}.EngineRPM_rpm(65:151, 1);
-
-JettaData{1}.non_idle_accel_time = ...
-    JettaData{1}.Time_sec(12:64, 1);
-JettaData{1}.non_idle_decel_time = ...
-    JettaData{1}.Time_sec(65:151, 1);
-
-JettaData{1}.nonIdleAccelRPMvsTimeParam = ...
-    polyfit(JettaData{1}.non_idle_accel_time,...
-    JettaData{1}.non_idle_accel_rpm,2);
-JettaData{1}.nonIdleDecelRPMvsTimeParam = ...
-    polyfit(JettaData{1}.non_idle_decel_time,...
-    JettaData{1}.non_idle_decel_rpm,2);
-JettaData{1}.TotalRPMvsTimeParam = ...
-    polyfit(JettaData{1}.Time_sec, ...
-        JettaData{1}.EngineRPM_rpm,2);
-
-JettaData{1}.total_idle_time = ...
-    JettaData{1}.Time_sec(12) - JettaData{1}.Time_sec(1);
-JettaData{1}.total_accel_time = ...
-    JettaData{1}.Time_sec(64) - JettaData{1}.Time_sec(1);
-JettaData{1}.total_decel_time = ...
-    JettaData{1}.Time_sec(151) - JettaData{1}.Time_sec(65);
-
-JettaData{1}.ave_accel = mean(JettaData{1}.Acceleration_fts2(1:64,1));
-JettaData{1}.ave_decel = mean(JettaData{1}.Acceleration_fts2(65:151,1));
-[JettaData{1}.max_speed, max_index] = ...
-    max(JettaData{1}.VehicleSpeed_MPH);
-JettaData{1}.time_at_max_speed = JettaData{1}.Time_sec(max_index);
-
-%%
-pass_band = 8;
-sampling_speed = 30;
-
+% motion detection
+JettaMotion = cell(1,3);
+CamryMotion = cell(1,3);
 for i = 1:3
-    CamryData{i}.speed_fts_filtered = ...
-        lowpass(CamryData{i}.speed_fts,pass_band,sampling_speed);
-    CamryData{i}.acceleration_fts2 =...
-        gradient(CamryData{i}.speed_fts,CamryData{i}.Time_sec);
-    CamryData{i}.accel_fts2_filtered =...
-        gradient(CamryData{i}.speed_fts_filtered,CamryData{i}.Time_sec);
+    filtered_camry_data = ...
+        SpeedKalmanFilter(CamryData{i}.Time_sec,...
+        CamryData{i}.speed_fts);
+    CamryData{i}.filtered_speed = filtered_camry_data.filtered_speed;
+    CamryData{i}.filtered_accel = filtered_camry_data.predicted_accel;
+    
+    CamryData{i}.trip_distanceft = cumtrapz(CamryData{i}.Time_sec,...
+        CamryData{i}.speed_fts);
+    CamryData{i}.filtered_trip_distnaceft = ...
+        cumtrapz(CamryData{i}.Time_sec,...
+        CamryData{i}.filtered_speed);
+
+    filtered_jetta_data = SpeedKalmanFilter(JettaData{i}.Time_sec,...
+        JettaData{i}.speed_fts);
+
+    JettaData{i}.filtered_accel = ...
+        filtered_jetta_data.predicted_accel;
+    JettaData{i}.filtered_speed = ...
+        filtered_jetta_data.filtered_speed;
+    JettaMotion{i} = struct();
+    CamryMotion{i} = struct();
+    JettaMotion{i} = detectMotionSections(JettaData{i}.filtered_accel);
+    CamryMotion{i} = detectMotionSections(CamryData{i}.filtered_accel);
 end
-subplot(2,2,1);
-plot(CamryData{1}.Time_sec,CamryData{1}.speed_fts,"b","LineWidth",1.5);
-legend("speed fts");
-ylabel("speed(ft/s)");
-xlabel("time(sec)");
-grid on;
+%% Calculating acceleration from Camry test data with Kalman Filter
+% also plot camry test speed data
 
-%%
-function [speed_KF, accel_KF] = simpleKalman(t, v, sigmaV, q)
-    t = t(:);
-    v = v(:);
-
-    assert(numel(t) == numel(v) && numel(t) >= 2);
-    assert(all(isfinite(t)) && all(isfinite(v)));
-    assert(all(diff(t) > 0), "Check timestamps first.");
-    assert(sigmaV > 0 && q > 0);
-
-    R = sigmaV^2;             % Speed measurement variance: (ft/s)^2
-    H = [1, 0];              % We measure speed, not acceleration
-
-    state = [v(1); 0];       % Initial acceleration guess: 0 ft/s^2
-    P = diag([R, 10^2]);     % Initial uncertainty in speed/acceleration
-
-    history = zeros(2, numel(t));
-    history(:,1) = state;
-
-    for k = 2:numel(t)
-        dt = t(k) - t(k-1);
-
-        F = [1, dt; 0, 1];
-
-        % Acceleration changes driven by white jerk.
-        % q has units ft^2/s^5.
-        Q = q * [dt^3/3, dt^2/2; dt^2/2, dt];
-
-        % Predict
-        state = F * state;
-        P = F * P * F.' + Q;
-
-        % Correct using measured speed
-        K = P * H.' / (H * P * H.' + R);
-        state = state + K * (v(k) - H * state);
-
-        A = eye(2) - K * H;
-        P = A * P * A.' + K * R * K.';
-
-        history(:,k) = state;
+if plot_camry_accel == true
+    for i = 1:3
+    camry_accel_title_name = ["Camry Trial 1 Acceleration vs Time",
+            "Camry Trial 2 Acceleration vs Time",
+            "Camry Trial 3 Acceleration vs Time"];
+    subplot(2,2,i);
+    plot(CamryData{i}.Time_sec,CamryData{i}.filtered_accel,"o",...
+        "MarkerFaceColor","red","MarkerEdgeColor","red","MarkerSize",...
+        1.5);
+    title(camry_accel_title_name(i));
+    xlabel("Time(sec)");
+    ylabel("Acceleration(ft/s2)");
+    grid on;
     end
-
-    speed_KF = history(1,:).';
-    accel_KF = history(2,:).';
 end
 
-sigmaV = 1;   % Assumed speed uncertainty: 1 ft/s
-q = 1;        % Starting tuning value, not calibrated
-
-for i = 1:numel(CamryData)
-    [CamryData{i}.speed_fts_KF, CamryData{i}.accel_fts2_KF] = ...
-        simpleKalman(CamryData{i}.Time_sec, ...
-                     CamryData{i}.speed_fts, sigmaV, q);
+if plot_camry_vel == true
+    for i = 1:3
+    camry_accel_title_name = ["Camry Trial 1 Speed vs Time",
+            "Camry Trial 2 Speed vs Time",
+            "Camry Trial 3 Speed vs Time"];
+    subplot(2,2,i);
+    plot(CamryData{i}.Time_sec,CamryData{i}.speed_fts,"o",...
+        "MarkerFaceColor","m","MarkerEdgeColor","m","MarkerSize",...
+        1.0);
+    title(camry_accel_title_name(i));
+    xlabel("Time(sec)");
+    ylabel("Speed(ft/s)");
+    grid on;
+    end
 end
 
-subplot(2,2,2);
-plot(CamryData{1}.Time_sec, ...
-     CamryData{1}.acceleration_fts2(:),"b","LineWidth", 1.5);
-hold on;
-plot(CamryData{1}.Time_sec, ...
-     CamryData{1}.accel_fts2_filtered(:),"r","LineWidth", 1.5);
-plot(CamryData{1}.Time_sec, ...
-     CamryData{1}.accel_fts2_KF(:),"g","LineWidth", 1.5);
-xlabel("Time (s)");
-ylabel("Acceleration (ft/s^2)");
-legend("Raw derivative", "Low-pass derivative", ...
-       "Kalman estimate", "Location", "best");
-title("Acceleration estimate comparison");
-hold off;
-grid on;
-
-subplot(2,2,3);
-t = CamryData{1}.Time_sec(:);
-v = CamryData{1}.speed_fts(:);
-
-idx_accel = 67:288;
-idx_decel = 289:481;
-
-% Average acceleration from the endpoints of each selected interval.
-estimated_accel = ...
-    (v(idx_accel(end)) - v(idx_accel(1))) / ...
-    (t(idx_accel(end)) - t(idx_accel(1)));
-
-estimated_decel = ...
-    (v(idx_decel(end)) - v(idx_decel(1))) / ...
-    (t(idx_decel(end)) - t(idx_decel(1)));
-
-a_raw = CamryData{1}.acceleration_fts2(:);
-a_lowpass = CamryData{1}.accel_fts2_filtered(:);
-
-% Rows: acceleration / braking. Columns: raw / low-pass.
-deviation_MSE = [
-    mean((a_raw(idx_accel) - estimated_accel).^2), ...
-    mean((a_lowpass(idx_accel) - estimated_accel).^2);
-
-    mean((a_raw(idx_decel) - estimated_decel).^2), ...
-    mean((a_lowpass(idx_decel) - estimated_decel).^2)
-];
-a_KF = CamryData{1}.accel_fts2_KF(:);
-
-deviation_MSE(:,3) = [
-    mean((a_KF(idx_accel) - estimated_accel).^2);
-    mean((a_KF(idx_decel) - estimated_decel).^2)
-];
-bar(deviation_MSE);
-xticks(1:2);
-xticklabels(["Accelerating", "Braking"]);
-legend("Raw", "Low-pass", "Kalman", "Location", "best");
-ylabel("Mean squared deviation [(ft/s^2)^2]");
-title("Deviation from each interval's average acceleration");
-grid on;
-
-t = CamryData{1}.Time_sec(:);
-idx_accel = 67:288;
-idx_decel = 289:481;
-
-acceleration = [
-    CamryData{1}.acceleration_fts2(:), ...
-    CamryData{1}.accel_fts2_filtered(:), ...
-    CamryData{1}.accel_fts2_KF(:)
-];
-
-% Time-weighted averages, accounting for timestamp spacing.
-avg_accel = trapz(t(idx_accel), acceleration(idx_accel,:), 1) ...
-    / (t(idx_accel(end)) - t(idx_accel(1)));
-
-avg_decel = trapz(t(idx_decel), acceleration(idx_decel,:), 1) ...
-    / (t(idx_decel(end)) - t(idx_decel(1)));
-
-methods = ["Raw", "Low-pass", "Kalman"];
-
-fprintf("\n%-12s %20s %20s\n", ...
-    "Method", "Avg accel (ft/s^2)", "Avg decel (ft/s^2)");
-
-for k = 1:3
-    fprintf("%-12s %20.4f %20.4f\n", ...
-        methods(k), avg_accel(k), avg_decel(k));
+if plot_camry_filtered_vel == true
+    for i = 1:3
+    camry_filtered_vel_title_name = ...
+        ["Camry Trial 1 Filtered Speed vs Time",
+            "Camry Trial 2 Filtered Speed vs Time",
+            "Camry Trial 3 Filtered Speed vs Time"];
+    subplot(2,2,i);
+    plot(CamryData{i}.Time_sec,CamryData{i}.filtered_speed,"o",...
+        "MarkerFaceColor","m","MarkerEdgeColor","m","MarkerSize",...
+        1.0);
+    title(camry_filtered_vel_title_name(i));
+    xlabel("Time(sec)");
+    ylabel("Speed(ft/s)");
+    grid on;
+    end
 end
 
-subplot(2,2,4);
-plot(CamryData{1}.Time_sec,CamryData{1}.accel_fts2_KF,"m","LineWidth",1.5);
-title("Kalman Filtered Acceleration fts2");
-xlabel("time(sec)");
-ylabel("acceleration(ft/s2)");
-grid on;
+if plot_camry_pos == true
+    for i = 1:3
+        camry_pos_title_name = ["Camry Trial 1 Distance vs Time",
+            "Camry Trial 2 Distance vs Time",
+            "Camry Trial 3 Distance vs Time"];
+        subplot(2,2,i);
+        plot(CamryData{i}.Time_sec,CamryData{i}.trip_distanceft,"o",...
+        "MarkerFaceColor","b","MarkerEdgeColor","b","MarkerSize",...
+        0.8);
+        title(camry_pos_title_name(i));
+        xlabel("Time(sec)");
+        ylabel("Distance(ft)");
+        grid on;
+    end
+end
+
+%% plotting motion data from Jetta test
+if plot_jetta_pos == true
+    for i = 1:3 
+        Jetta_pos_titles = ["Jetta Trial 1 Distance vs Time",...
+            "Jetta Trial 2 Distance vs Time",...
+            "Jetta Trial 3 Distance vs Time"];
+        subplot(2,2,i);
+        plot(JettaData{i}.Time_sec,JettaData{i}.trip_distanceft,...
+            "o",...
+        "MarkerFaceColor","blue","MarkerEdgeColor","blue","MarkerSize",...
+        1.5);
+        title(Jetta_pos_titles(i));
+        xlabel("Time(sec)");
+        ylabel("Distance(ft)");
+        grid on;
+    end
+end
+
+if plot_jetta_vel == true
+    for i = 1:3 
+        Jetta_vel_titles = ["Jetta Trial 1 Speed vs Time",...
+            "Jetta Trial 2 Speed vs Time",...
+            "Jetta Trial 3 Speed vs Time"];
+        subplot(2,2,i);
+        plot(JettaData{i}.Time_sec,JettaData{i}.speed_fts,...
+            "o",...
+        "MarkerFaceColor","m","MarkerEdgeColor","m","MarkerSize",...
+        2.0);
+        title(Jetta_vel_titles(i));
+        xlabel("Time(sec)");
+        ylabel("Speed(ft/s)");
+        grid on;
+    end
+end
+
+if plot_jetta_accel == true
+    for i = 1:3 
+        Jetta_accel_titles = ["Jetta Trial 1 Acceleration vs Time",...
+            "Jetta Trial 2 Acceleration vs Time",...
+            "Jetta Trial 3 Acceleration vs Time"];
+        subplot(2,2,i);
+        plot(JettaData{i}.Time_sec,JettaData{i}.Acceleration_fts2,...
+            "o",...
+        "MarkerFaceColor","r","MarkerEdgeColor","r","MarkerSize",...
+        3.0);
+        title(Jetta_accel_titles(i));
+        xlabel("Time(sec)");
+        ylabel("Acceleration(ft/s2)");
+        grid on;
+    end
+end
+
+if plot_jetta_filtered_accel == true
+    for i = 1:3 
+        Jetta_filtered_accel_titles = ...
+            ["Jetta Trial 1 Filtered Acceleration vs Time",...
+            "Jetta Trial 2 Filtered Acceleration vs Time",...
+            "Jetta Trial 3 Filtered Acceleration vs Time"];
+        subplot(2,2,i);
+        plot(JettaData{i}.Time_sec,JettaData{i}.filtered_accel,...
+            "o",...
+        "MarkerFaceColor","r","MarkerEdgeColor","r","MarkerSize",...
+        3.0);
+        title( Jetta_filtered_accel_titles(i));
+        xlabel("Time(sec)");
+        ylabel("Acceleration(ft/s2)");
+        grid on;
+    end
+end
+
+%% Plot Engine/Fuel Data for both vehicle tests
+if plot_jetta_rpmtime == true
+    for i = 1:3
+        Jetta_rpm_time_title = ...
+            ["Jetta Trial 1 Engine RPM vs Time",...
+            "Jetta Trial 2 Engine RPM vs Time",...
+            "Jetta Trial 3 Engine RPM vs Time"];
+        subplot(2,2,i);
+        plot(JettaData{i}.Time_sec,JettaData{i}.EngineRPM_rpm,"o",...
+            "MarkerFaceColor","c","MarkerEdgeColor","c",...
+            "MarkerSize",3);
+        title(Jetta_rpm_time_title(i));
+        xlabel("Time(sec)");
+        ylabel("Engine RPM(rpm)")
+        grid on;
+    end
+end
+
+if plot_jetta_rpmvel_accel == true
+    for i = 1:3
+        Jetta_rpm_vel_title = ...
+            ["Jetta Trial 1 Engine RPM vs Speed (accel)",...
+            "Jetta Trial 2 Engine RPM vs Speed (accel)",...
+            "Jetta Trial 3 Engine RPM vs Speed (accel)"];
+        subplot(2,2,i);
+        plot(JettaData{i}.speed_fts(12:64,1),...
+            JettaData{i}.EngineRPM_rpm(12:64,1),"o",...
+            "MarkerFaceColor","c","MarkerEdgeColor","c",...
+            "MarkerSize",3);
+        title(Jetta_rpm_vel_title(i));
+        xlabel("Speed(ft/s)");
+        ylabel("Engine RPM(rpm)")
+        grid on;
+    end
+end
+
+if plot_jetta_rpmvel_decel == true
+    for i = 1:3
+        Jetta_rpm_vel_title = ...
+            ["Jetta Trial 1 Engine RPM vs Speed (decel)",...
+            "Jetta Trial 2 Engine RPM vs Speed (decel)",...
+            "Jetta Trial 3 Engine RPM vs Speed (decel)"];
+        subplot(2,2,i);
+        plot(JettaData{i}.speed_fts,...
+            JettaData{i}.EngineRPM_rpm,"o",...
+            "MarkerFaceColor","c","MarkerEdgeColor","c",...
+            "MarkerSize",3);
+        title(Jetta_rpm_vel_title(i));
+        xlabel("Speed(ft/s)");
+        ylabel("Engine RPM(rpm)")
+        grid on;
+    end
+end
+
+if plot_jetta_fuelratetime == true
+    for i = 1:3
+        Jetta_fuelratetime_title = ...
+            ["Jetta Trial 1 Fuel Rate vs Time",...
+            "Jetta Trial 2 Fuel Rate vs Time",...
+            "Jetta Trial 3 Fuel Rate vs Time"];
+        subplot(2,2,i);
+        plot(JettaData{i}.Time_sec,...
+            JettaData{i}.instantFuelRategals,"o",...
+            "MarkerFaceColor","black","MarkerEdgeColor","black",...
+            "MarkerSize",3);
+        title(Jetta_fuelratetime_title(i));
+        xlabel("Time(sec)");
+        ylabel("Fuel Rate(gal/sec)")
+        grid on;
+    end
+end
+
+if plot_jetta_fuelused == true
+    for i = 1:3
+        Jetta_fuelused_title = ...
+            ["Jetta Trial 1 Cumulated Fuel Consumption vs Time",...
+            "Jetta Trial 2 Cumulated Fuel Consumption vs Time",...
+            "Jetta Trial 3 Cumulated Fuel Consumption vs Time"];
+        subplot(2,2,i);
+        plot(JettaData{i}.Time_sec,...
+            JettaData{i}.TripFuel_gal,"o",...
+            "MarkerFaceColor","black","MarkerEdgeColor","black",...
+            "MarkerSize",3);
+        title(Jetta_fuelused_title(i));
+        xlabel("Time(sec)");
+        ylabel("Cumulated Fuel Consumption(gal)")
+        grid on;
+    end
+end
+
+
 %%
 save("JettaData.mat");
 save("CamryData.mat");
