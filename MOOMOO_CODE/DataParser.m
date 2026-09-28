@@ -300,7 +300,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",CamryTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Camry Trial %d Position vs Time', i));
+            title('Camry Position vs Time');
             xlabel('Time (s)'); 
             ylabel('Distance (ft)');
             set(gca,'FontSize',14);
@@ -316,7 +316,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",CamryTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Camry Trial %d Speed vs Time', i));
+            title('Camry Speed vs Time');
             xlabel('Time (s)');
             ylabel('Speed (ft/s)');
             set(gca,'FontSize',14);
@@ -334,9 +334,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",CamryTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf(...
-                'Camry Trial %d Raw Acceleration (from Speed) vs Time',...
-                i));
+            title('Camry Raw Acceleration (from Speed) vs Time');
             xlabel('Time (s)');
             ylabel('Acceleration (ft/s^2)');
             set(gca,'FontSize',14);
@@ -352,9 +350,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",CamryTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(...
-                sprintf('Camry Trial %d Filtered Acceleration vs Time',...
-                i));
+            title('Camry Filtered Acceleration vs Time');
             xlabel('Time (s)');
             ylabel('Acceleration (ft/s^2)');
             set(gca,'FontSize',14);
@@ -370,7 +366,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",CamryTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Camry Trial %d Kalman Speed vs Time', i));
+            title('Camry Kalman Speed vs Time');
             xlabel('Time (s)');
             ylabel('Speed (ft/s)');
             set(gca,'FontSize',14);
@@ -386,7 +382,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",CamryTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Camry Trial %d RPM vs Time', i));
+            title('Camry RPM vs Time');
             xlabel('Time (s)');
             ylabel('Engine speed (rpm)');
             set(gca,'FontSize',14);
@@ -478,7 +474,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",CamryTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Camry Trial %d RPM vs Speed', i));
+            title('Camry RPM vs Speed');
             xlabel('Speed (ft/s)');
             ylabel('Engine speed (rpm)');
             set(gca,'FontSize',14);
@@ -495,7 +491,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",CamryTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Camry Trial %d Initial Idle: RPM vs Speed', i));
+            title('Camry Initial Idle: RPM vs Speed');
             xlabel('Speed (ft/s)');
             ylabel('Engine speed (rpm)');
             set(gca,'FontSize',14);
@@ -512,7 +508,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",CamryTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Camry Trial %d Acceleration: RPM vs Speed', i));
+            title('Camry Acceleration: RPM vs Speed');
             xlabel('Speed (ft/s)');
             ylabel('Engine speed (rpm)');
             set(gca,'FontSize',14);
@@ -535,7 +531,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",CamryTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Camry Trial %d Braking: RPM vs Speed', i));
+            title('Camry Braking: RPM vs Speed');
             xlabel('Speed (ft/s)');
             ylabel('Engine speed (rpm)');
             set(gca,'FontSize',14);
@@ -554,7 +550,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",CamryTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Camry Trial %d Final Idle: RPM vs Speed', i));
+            title('Camry Final Idle: RPM vs Speed');
             xlabel('Speed (ft/s)');
             ylabel('Engine speed (rpm)');
             set(gca,'FontSize',14);
@@ -570,7 +566,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",CamryTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Camry Trial %d Fuel Rate vs Time', i));
+            title('Camry Fuel Rate vs Time');
             xlabel('Time (s)');
             ylabel('Fuel rate (lb/s)');
             set(gca,'FontSize',14);
@@ -586,7 +582,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",CamryTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Camry Trial %d Cumulative Fuel vs Time', i));
+            title('Camry Cumulative Fuel vs Time');
             xlabel('Time (s)');
             ylabel('Fuel (lb)');
             set(gca,'FontSize',14);
@@ -603,7 +599,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",JettaTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Jetta Trial %d Position vs Time', i));
+            title('Jetta Position vs Time');
             xlabel('Time (s)');
             ylabel('Distance (ft)');
             set(gca,'FontSize',14);
@@ -619,7 +615,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",JettaTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Jetta Trial %d Speed vs Time', i));
+            title('Jetta Speed vs Time');
             xlabel('Time (s)');
             ylabel('Speed (ft/s)');
             set(gca,'FontSize',14);
@@ -635,7 +631,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",JettaTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Jetta Trial %d Raw Acceleration vs Time', i));
+            title('Jetta Raw Acceleration vs Time');
             xlabel('Time (s)');
             ylabel('Acceleration (ft/s^2)');
             set(gca,'FontSize',14);
@@ -651,9 +647,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",JettaTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(...
-                sprintf('Jetta Trial %d Filtered Acceleration vs Time',...
-                i));
+            title('Jetta Filtered Acceleration vs Time');
             xlabel('Time (s)');
             ylabel('Acceleration (ft/s^2)');
             set(gca,'FontSize',14);
@@ -669,7 +663,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",JettaTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Jetta Trial %d RPM vs Time', i));
+            title('Jetta RPM vs Time');
             xlabel('Time (s)');
             ylabel('Engine speed (rpm)');
             set(gca,'FontSize',14);
@@ -762,7 +756,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",JettaTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Jetta Trial %d Initial Idle: RPM vs Speed', i));
+            title('Jetta Initial Idle: RPM vs Speed');
             xlabel('Speed (ft/s)');
             ylabel('Engine speed (rpm)');
             set(gca,'FontSize',14);
@@ -779,7 +773,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",JettaTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Jetta Trial %d Acceleration: RPM vs Speed', i));
+            title('Jetta Acceleration: RPM vs Speed');
             xlabel('Speed (ft/s)');
             ylabel('Engine speed (rpm)');
             set(gca,'FontSize',14);
@@ -802,7 +796,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",JettaTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Jetta Trial %d Braking: RPM vs Speed', i));
+            title('Jetta Braking: RPM vs Speed');
             xlabel('Speed (ft/s)');
             ylabel('Engine speed (rpm)');
             set(gca,'FontSize',14);
@@ -821,7 +815,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",JettaTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Jetta Trial %d Final Idle: RPM vs Speed', i));
+            title('Jetta Final Idle: RPM vs Speed');
             xlabel('Speed (ft/s)');
             ylabel('Engine speed (rpm)');
             set(gca,'FontSize',14);
@@ -837,7 +831,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",JettaTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Jetta Trial %d Fuel Rate vs Time', i));
+            title('Jetta Fuel Rate vs Time');
             xlabel('Time (s)');
             ylabel('Fuel rate (gal/s)');
             set(gca,'FontSize',14);
@@ -857,7 +851,7 @@ for graph = 1:numel(plot_filenames)
                 "MarkerEdgeColor",JettaTrialColors(i),...
                 'MarkerSize',2.0);
             hold on;
-            title(sprintf('Jetta Trial %d Cumulative Fuel vs Time', i));
+            title('Jetta Cumulative Fuel vs Time');
             xlabel('Time (s)');
             ylabel('Fuel (gal)');
             set(gca,'FontSize',14);
