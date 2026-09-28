@@ -4,11 +4,19 @@ clearvars;
 load("JettaData.mat");
 load("CamryData.mat");
 
-plot_camry_accel = 0;
+print_jetta_table = 0;
+print_camry_table = 0;
+
+plot_camry_accel = 1;
+plot_camry_raw_accel = 0;
 plot_camry_vel = 0;
 plot_camry_filtered_vel = 0;
 plot_camry_pos = 0;
 plot_camry_rpmtime = 0;
+plot_camry_rpmtime_idle1 = 0;
+plot_camry_rpmtime_accel = 0;
+plot_camry_rpmtime_decel = 0;
+plot_camry_rpmtime_idle2 = 0;
 plot_camry_rpmvel = 0;
 plot_camry_rpmvel_idle1 = 0;
 plot_camry_rpmvel_accel = 0;
@@ -16,29 +24,22 @@ plot_camry_rpmvel_decel = 0;
 plot_camry_rpmvel_idle2 = 0;
 plot_camry_fuelratetime = 0;
 plot_camry_fuelused = 0;
-export_camry_png = 0; % Save only the Camry plots enabled above.
-plot_output_folder = fileparts(mfilename('fullpath'));
 
 plot_jetta_pos = 0;
 plot_jetta_vel = 0;
 plot_jetta_accel = 0;
 plot_jetta_filtered_accel = 0;
 plot_jetta_rpmtime = 0;
+plot_jetta_rpmtime_idle1 = 0;
+plot_jetta_rpmtime_accel = 0;
+plot_jetta_rpmtime_decel = 0;
+plot_jetta_rpmtime_idle2 = 0;
 plot_jetta_rpmvel_idle1 = 0;
 plot_jetta_rpmvel_accel = 0;
 plot_jetta_rpmvel_decel = 0;
 plot_jetta_rpmvel_idle2 = 0;
 plot_jetta_fuelratetime = 0;
 plot_jetta_fuelused = 0;
-% Model and report plots (0 = off, 1 = on).
-fit_models = 1;
-predict_courses = 1;
-plot_jetta_phase_fits = 0;
-plot_camry_phase_fits = 0;
-plot_jetta_courses = 0;
-plot_camry_courses = 0;
-save_plot_png = 0;
-save_model_results = 0;
 
 %% 1. Data Parsing
 % a.
@@ -73,7 +74,9 @@ for i = 1:3
         JettaData{i}.InstantFuelEcon_MPG)./3600;
 end
 
-
+JettaTrialColors = ["b","r","c"];
+CamryTrialColors = ["b","r","c"];
+TrialLegends = ["Trial 1","Trial 2","Trial 3"];
 %% 2. Compute Data Sampling Frequency
 
 % a. Frequency calculation
@@ -91,9 +94,12 @@ end
 % Test Procedure: 1)Park at a relatively flat parking lot;
 %                 2)Accelerate the car from 0-35 mph;
 %                 3)Once reach 35 mph,deccelerate the car to 0 mph safely;
-
-printJettaDataTable(JettaData);
-printCamryDataTable(CamryData);
+if print_jetta_table == 1
+    printJettaDataTable(JettaData);
+end
+if print_camry_table == 1
+    printCamryDataTable(CamryData);
+end
 %% 4. Helper Function Declaration
 
 % this function takes in a string vector, and a cell
@@ -179,7 +185,7 @@ function Datacell_unit_converted = convertUnits(Datacell)
         Datacell_unit_converted = Datacell;
 end
 
-%% Calculating acceleration from Camry test data with Kalman Filter
+%% Calculating acceleration with Kalman Filter
 % acceleration calculation and motion detection
 JettaMotion = cell(1,3);
 CamryMotion = cell(1,3);
@@ -210,407 +216,668 @@ for i = 1:3
 end
 
 %% Plot recorded trials (three trials on each graph)
-trial_colors = lines(3);
-for i = 1:3
-    % Camry: Distance vs time
-    if plot_camry_pos
-        if i == 1, fig_camry_pos = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_camry_pos); hold on;
-        plot(CamryData{i}.Time_sec,CamryData{i}.trip_distanceft,'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Camry: Distance vs time'); xlabel('Time (s)'); ylabel('Distance (ft)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png || export_camry_png)
-            exportgraphics(fig_camry_pos,fullfile(plot_output_folder,'CamryAllTrials pos.png'),'Resolution',200);
+save_folder = fullfile(fileparts(mfilename('fullpath')), ...
+    "New plots and reports");
+plot_filenames = [
+    "CamryPos3Trial.png"
+    "CamryVel3Trial.png"
+    "CamryRawAccel3Trial.png"
+    "CamryFilteredAccel3Trial.png"
+    "CamryFilteredVel3Trial.png"
+    "CamryRPMTime3Trial.png"
+    "CamryIdle1RPMTime3Trial.png"
+    "CamryAccelRPMTime3Trial.png"
+    "CamryDecelRPMTime3Trial.png"
+    "CamryIdle2RPMTime3Trial.png"
+    "CamryRPMVel3Trial.png"
+    "CamryIdle1RPMVel3Trial.png"
+    "CamryAccelRPMVel3Trial.png"
+    "CamryDecelRPMVel3Trial.png"
+    "CamryIdle2RPMVel3Trial.png"
+    "CamryFuelRate3Trial.png"
+    "CamryFuelUsed3Trial.png"
+    "JettaPos3Trial.png"
+    "JettaVel3Trial.png"
+    "JettaRawAccel3Trial.png"
+    "JettaFilteredAccel3Trial.png"
+    "JettaRPMTime3Trial.png"
+    "JettaIdle1RPMTime3Trial.png"
+    "JettaAccelRPMTime3Trial.png"
+    "JettaDecelRPMTime3Trial.png"
+    "JettaIdle2RPMTime3Trial.png"
+    "JettaIdle1RPMVel3Trial.png"
+    "JettaAccelRPMVel3Trial.png"
+    "JettaDecelRPMVel3Trial.png"
+    "JettaIdle2RPMVel3Trial.png"
+    "JettaFuelRate3Trial.png"
+    "JettaFuelUsed3Trial.png"
+];
+
+for graph = 1:numel(plot_filenames)
+    % Select one graph, then plot all three trials.
+    plot_camry_pos = (graph == 1);
+    plot_camry_vel = (graph == 2);
+    plot_camry_raw_accel = (graph == 3);
+    plot_camry_accel = (graph == 4);
+    plot_camry_filtered_vel = (graph == 5);
+    plot_camry_rpmtime = (graph == 6);
+    plot_camry_rpmtime_idle1 = (graph == 7);
+    plot_camry_rpmtime_accel = (graph == 8);
+    plot_camry_rpmtime_decel = (graph == 9);
+    plot_camry_rpmtime_idle2 = (graph == 10);
+    plot_camry_rpmvel = (graph == 11);
+    plot_camry_rpmvel_idle1 = (graph == 12);
+    plot_camry_rpmvel_accel = (graph == 13);
+    plot_camry_rpmvel_decel = (graph == 14);
+    plot_camry_rpmvel_idle2 = (graph == 15);
+    plot_camry_fuelratetime = (graph == 16);
+    plot_camry_fuelused = (graph == 17);
+    plot_jetta_pos = (graph == 18);
+    plot_jetta_vel = (graph == 19);
+    plot_jetta_accel = (graph == 20);
+    plot_jetta_filtered_accel = (graph == 21);
+    plot_jetta_rpmtime = (graph == 22);
+    plot_jetta_rpmtime_idle1 = (graph == 23);
+    plot_jetta_rpmtime_accel = (graph == 24);
+    plot_jetta_rpmtime_decel = (graph == 25);
+    plot_jetta_rpmtime_idle2 = (graph == 26);
+    plot_jetta_rpmvel_idle1 = (graph == 27);
+    plot_jetta_rpmvel_accel = (graph == 28);
+    plot_jetta_rpmvel_decel = (graph == 29);
+    plot_jetta_rpmvel_idle2 = (graph == 30);
+    plot_jetta_fuelratetime = (graph == 31);
+    plot_jetta_fuelused = (graph == 32);
+
+    fig = figure;
+
+    trial_colors = lines(3);
+    for i = 1:3
+        % Camry: Distance vs time
+        if plot_camry_pos
+            plot(CamryData{i}.Time_sec,...
+                 CamryData{i}.trip_distanceft,'o',...
+                "MarkerFaceColor",CamryTrialColors(i), ...
+                "MarkerEdgeColor",CamryTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Camry Trial %d Position vs Time', i));
+            xlabel('Time (s)'); 
+            ylabel('Distance (ft)');
+            set(gca,'FontSize',14);
+            grid on; 
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Camry: Speed vs time
+        if plot_camry_vel
+            plot(CamryData{i}.Time_sec,...
+                 CamryData{i}.speed_fts,'o',...
+                "MarkerFaceColor",CamryTrialColors(i), ...
+                "MarkerEdgeColor",CamryTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Camry Trial %d Speed vs Time', i));
+            xlabel('Time (s)');
+            ylabel('Speed (ft/s)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Camry: Raw acceleration from unfiltered speed
+        if plot_camry_raw_accel
+            raw_accel = gradient(CamryData{i}.speed_fts,...
+                                 CamryData{i}.Time_sec);
+            plot(CamryData{i}.Time_sec,...
+                 raw_accel,'o',...
+                "MarkerFaceColor",CamryTrialColors(i), ...
+                "MarkerEdgeColor",CamryTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf(...
+                'Camry Trial %d Raw Acceleration (from Speed) vs Time',...
+                i));
+            xlabel('Time (s)');
+            ylabel('Acceleration (ft/s^2)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Camry: Filtered acceleration vs time
+        if plot_camry_accel
+            plot(CamryData{i}.Time_sec,...
+                 CamryData{i}.filtered_accel,'o',...
+                "MarkerFaceColor",CamryTrialColors(i), ...
+                "MarkerEdgeColor",CamryTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(...
+                sprintf('Camry Trial %d Filtered Acceleration vs Time',...
+                i));
+            xlabel('Time (s)');
+            ylabel('Acceleration (ft/s^2)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Camry: Kalman speed vs time
+        if plot_camry_filtered_vel
+            plot(CamryData{i}.Time_sec,...
+                 CamryData{i}.filtered_speed,'o',...
+                "MarkerFaceColor",CamryTrialColors(i), ...
+                "MarkerEdgeColor",CamryTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Camry Trial %d Kalman Speed vs Time', i));
+            xlabel('Time (s)');
+            ylabel('Speed (ft/s)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Camry: RPM vs time
+        if plot_camry_rpmtime
+            plot(CamryData{i}.Time_sec,...
+                 CamryData{i}.EngineRPM_rpm,'o',...
+                "MarkerFaceColor",CamryTrialColors(i), ...
+                "MarkerEdgeColor",CamryTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Camry Trial %d RPM vs Time', i));
+            xlabel('Time (s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Camry: Initial idle: RPM vs time
+        if plot_camry_rpmtime_idle1
+            idx = CamryMotion{i}.idle_start_i:CamryMotion{i}.idle_end_i;
+            plot(CamryData{i}.Time_sec(idx),...
+                 CamryData{i}.EngineRPM_rpm(idx),'o',...
+                "MarkerFaceColor",CamryTrialColors(i), ...
+                "MarkerEdgeColor",CamryTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title('Camry Initial Idle: RPM vs Time');
+            xlabel('Time (s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Camry: Acceleration: RPM vs time
+        if plot_camry_rpmtime_accel
+            idx = CamryMotion{i}.accel_start_i:CamryMotion{i}.accel_end_i;
+            plot(CamryData{i}.Time_sec(idx),...
+                 CamryData{i}.EngineRPM_rpm(idx),'o',...
+                "MarkerFaceColor",CamryTrialColors(i), ...
+                "MarkerEdgeColor",CamryTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title('Camry Acceleration: RPM vs Time');
+            xlabel('Time (s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Camry: Braking: RPM vs time
+        if plot_camry_rpmtime_decel
+            idx = ...
+                CamryMotion{i}.decel_start_i:numel(CamryData{i}.speed_fts);
+            if isfield(CamryMotion{i},'decel_end_i')
+                idx = ....
+                    CamryMotion{i}.decel_start_i:...
+                    CamryMotion{i}.decel_end_i;
+            end
+            plot(CamryData{i}.Time_sec(idx),...
+                 CamryData{i}.EngineRPM_rpm(idx),'o',...
+                "MarkerFaceColor",CamryTrialColors(i), ...
+                "MarkerEdgeColor",CamryTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title('Camry Braking: RPM vs Time');
+            xlabel('Time (s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Camry: Final idle: RPM vs time
+        if plot_camry_rpmtime_idle2 && ...
+                isfield(CamryMotion{i}, 'second_idle_start_i')
+            idx = CamryMotion{i}.second_idle_start_i:...
+               CamryMotion{i}.second_idle_end_i;
+            plot(CamryData{i}.Time_sec(idx),...
+                 CamryData{i}.EngineRPM_rpm(idx),'o',...
+                "MarkerFaceColor",CamryTrialColors(i), ...
+                "MarkerEdgeColor",CamryTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title('Camry Final Idle: RPM vs Time');
+            xlabel('Time (s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Camry: RPM vs speed
+        if plot_camry_rpmvel
+            plot(CamryData{i}.speed_fts,...
+                 CamryData{i}.EngineRPM_rpm,'o',...
+                "MarkerFaceColor",CamryTrialColors(i), ...
+                "MarkerEdgeColor",CamryTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Camry Trial %d RPM vs Speed', i));
+            xlabel('Speed (ft/s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Camry: Initial idle: RPM vs speed
+        if plot_camry_rpmvel_idle1
+            idx = CamryMotion{i}.idle_start_i:CamryMotion{i}.idle_end_i;
+            plot(CamryData{i}.speed_fts(idx),...
+                 CamryData{i}.EngineRPM_rpm(idx),'o',...
+                "MarkerFaceColor",CamryTrialColors(i), ...
+                "MarkerEdgeColor",CamryTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Camry Trial %d Initial Idle: RPM vs Speed', i));
+            xlabel('Speed (ft/s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Camry: Acceleration: RPM vs speed
+        if plot_camry_rpmvel_accel
+            idx = CamryMotion{i}.accel_start_i:CamryMotion{i}.accel_end_i;
+            plot(CamryData{i}.speed_fts(idx),...
+                 CamryData{i}.EngineRPM_rpm(idx),'o',...
+                "MarkerFaceColor",CamryTrialColors(i), ...
+                "MarkerEdgeColor",CamryTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Camry Trial %d Acceleration: RPM vs Speed', i));
+            xlabel('Speed (ft/s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Camry: Braking: RPM vs speed
+        if plot_camry_rpmvel_decel
+            idx = ...
+                CamryMotion{i}.decel_start_i:numel(CamryData{i}.speed_fts);
+            if isfield(CamryMotion{i},'decel_end_i')
+                idx = ....
+                    CamryMotion{i}.decel_start_i:...
+                    CamryMotion{i}.decel_end_i;
+            end
+            plot(CamryData{i}.speed_fts(idx),...
+                 CamryData{i}.EngineRPM_rpm(idx),'o',...
+                "MarkerFaceColor",CamryTrialColors(i), ...
+                "MarkerEdgeColor",CamryTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Camry Trial %d Braking: RPM vs Speed', i));
+            xlabel('Speed (ft/s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Camry: Final idle: RPM vs speed
+        if plot_camry_rpmvel_idle2 && ...
+                isfield(CamryMotion{i}, 'second_idle_start_i')
+            idx = CamryMotion{i}.second_idle_start_i:...
+               CamryMotion{i}.second_idle_end_i;
+            plot(CamryData{i}.speed_fts(idx),...
+                 CamryData{i}.EngineRPM_rpm(idx),'o',...
+                "MarkerFaceColor",CamryTrialColors(i), ...
+                "MarkerEdgeColor",CamryTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Camry Trial %d Final Idle: RPM vs Speed', i));
+            xlabel('Speed (ft/s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Camry: Fuel rate vs time
+        if plot_camry_fuelratetime
+            plot(CamryData{i}.Time_sec,...
+                 CamryData{i}.fuelrate_lbs,'o',...
+                "MarkerFaceColor",CamryTrialColors(i), ...
+                "MarkerEdgeColor",CamryTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Camry Trial %d Fuel Rate vs Time', i));
+            xlabel('Time (s)');
+            ylabel('Fuel rate (lb/s)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Camry: Cumulative fuel vs time
+        if plot_camry_fuelused
+            plot(CamryData{i}.Time_sec,...
+                 CamryData{i}.cumulated_fuel_lb,'o',...
+                "MarkerFaceColor",CamryTrialColors(i), ...
+                "MarkerEdgeColor",CamryTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Camry Trial %d Cumulative Fuel vs Time', i));
+            xlabel('Time (s)');
+            ylabel('Fuel (lb)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Jetta: Distance vs time
+        if plot_jetta_pos
+            plot(JettaData{i}.Time_sec,...
+                 JettaData{i}.trip_distanceft - ...
+                 JettaData{i}.trip_distanceft(1),'o',...
+                "MarkerFaceColor",JettaTrialColors(i), ...
+                "MarkerEdgeColor",JettaTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Jetta Trial %d Position vs Time', i));
+            xlabel('Time (s)');
+            ylabel('Distance (ft)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Jetta: Speed vs time
+        if plot_jetta_vel
+            plot(JettaData{i}.Time_sec,...
+                 JettaData{i}.speed_fts,'o',...
+                "MarkerFaceColor",JettaTrialColors(i), ...
+                "MarkerEdgeColor",JettaTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Jetta Trial %d Speed vs Time', i));
+            xlabel('Time (s)');
+            ylabel('Speed (ft/s)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Jetta: Raw (logged) acceleration vs time
+        if plot_jetta_accel
+            plot(JettaData{i}.Time_sec,...
+                 JettaData{i}.Acceleration_fts2,'o',...
+                "MarkerFaceColor",JettaTrialColors(i), ...
+                "MarkerEdgeColor",JettaTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Jetta Trial %d Raw Acceleration vs Time', i));
+            xlabel('Time (s)');
+            ylabel('Acceleration (ft/s^2)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Jetta: Filtered acceleration vs time
+        if plot_jetta_filtered_accel
+            plot(JettaData{i}.Time_sec,...
+                 JettaData{i}.filtered_accel,'o',...
+                "MarkerFaceColor",JettaTrialColors(i), ...
+                "MarkerEdgeColor",JettaTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(...
+                sprintf('Jetta Trial %d Filtered Acceleration vs Time',...
+                i));
+            xlabel('Time (s)');
+            ylabel('Acceleration (ft/s^2)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Jetta: RPM vs time
+        if plot_jetta_rpmtime
+            plot(JettaData{i}.Time_sec,...
+                 JettaData{i}.EngineRPM_rpm,'o',...
+                "MarkerFaceColor",JettaTrialColors(i), ...
+                "MarkerEdgeColor",JettaTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Jetta Trial %d RPM vs Time', i));
+            xlabel('Time (s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Jetta: Initial idle: RPM vs time
+        if plot_jetta_rpmtime_idle1
+            idx = JettaMotion{i}.idle_start_i:JettaMotion{i}.idle_end_i;
+            plot(JettaData{i}.Time_sec(idx),...
+                 JettaData{i}.EngineRPM_rpm(idx),'o',...
+                "MarkerFaceColor",JettaTrialColors(i), ...
+                "MarkerEdgeColor",JettaTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title('Jetta Initial Idle: RPM vs Time');
+            xlabel('Time (s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Jetta: Acceleration: RPM vs time
+        if plot_jetta_rpmtime_accel
+            idx = JettaMotion{i}.accel_start_i:JettaMotion{i}.accel_end_i;
+            plot(JettaData{i}.Time_sec(idx),...
+                 JettaData{i}.EngineRPM_rpm(idx),'o',...
+                "MarkerFaceColor",JettaTrialColors(i), ...
+                "MarkerEdgeColor",JettaTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title('Jetta Acceleration: RPM vs Time');
+            xlabel('Time (s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Jetta: Braking: RPM vs time
+        if plot_jetta_rpmtime_decel
+            idx = JettaMotion{i}.decel_start_i:...
+                numel(JettaData{i}.speed_fts);
+            if isfield(JettaMotion{i},'decel_end_i')
+                idx = ...
+                    JettaMotion{i}.decel_start_i:...
+                    JettaMotion{i}.decel_end_i;
+            end
+            plot(JettaData{i}.Time_sec(idx),...
+                 JettaData{i}.EngineRPM_rpm(idx),'o',...
+                "MarkerFaceColor",JettaTrialColors(i), ...
+                "MarkerEdgeColor",JettaTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title('Jetta Braking: RPM vs Time');
+            xlabel('Time (s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Jetta: Final idle: RPM vs time
+        if plot_jetta_rpmtime_idle2 && ...
+                isfield(JettaMotion{i}, 'second_idle_start_i')
+            idx = JettaMotion{i}.second_idle_start_i:...
+                JettaMotion{i}.second_idle_end_i;
+            plot(JettaData{i}.Time_sec(idx),...
+                 JettaData{i}.EngineRPM_rpm(idx),'o',...
+                "MarkerFaceColor",JettaTrialColors(i), ...
+                "MarkerEdgeColor",JettaTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title('Jetta Final Idle: RPM vs Time');
+            xlabel('Time (s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Jetta: Initial idle: RPM vs speed
+        if plot_jetta_rpmvel_idle1
+            idx = JettaMotion{i}.idle_start_i:JettaMotion{i}.idle_end_i;
+            plot(JettaData{i}.speed_fts(idx),...
+                 JettaData{i}.EngineRPM_rpm(idx),'o',...
+                "MarkerFaceColor",JettaTrialColors(i), ...
+                "MarkerEdgeColor",JettaTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Jetta Trial %d Initial Idle: RPM vs Speed', i));
+            xlabel('Speed (ft/s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Jetta: Acceleration: RPM vs speed
+        if plot_jetta_rpmvel_accel
+            idx = JettaMotion{i}.accel_start_i:JettaMotion{i}.accel_end_i;
+            plot(JettaData{i}.speed_fts(idx),...
+                 JettaData{i}.EngineRPM_rpm(idx),'o',...
+                "MarkerFaceColor",JettaTrialColors(i), ...
+                "MarkerEdgeColor",JettaTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Jetta Trial %d Acceleration: RPM vs Speed', i));
+            xlabel('Speed (ft/s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Jetta: Braking: RPM vs speed
+        if plot_jetta_rpmvel_decel
+            idx = JettaMotion{i}.decel_start_i:...
+                numel(JettaData{i}.speed_fts);
+            if isfield(JettaMotion{i},'decel_end_i')
+                idx = ...
+                    JettaMotion{i}.decel_start_i:...
+                    JettaMotion{i}.decel_end_i;
+            end
+            plot(JettaData{i}.speed_fts(idx),...
+                 JettaData{i}.EngineRPM_rpm(idx),'o',...
+                "MarkerFaceColor",JettaTrialColors(i), ...
+                "MarkerEdgeColor",JettaTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Jetta Trial %d Braking: RPM vs Speed', i));
+            xlabel('Speed (ft/s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Jetta: Final idle: RPM vs speed
+        if plot_jetta_rpmvel_idle2 && ...
+                isfield(JettaMotion{i}, 'second_idle_start_i')
+            idx = JettaMotion{i}.second_idle_start_i:...
+                JettaMotion{i}.second_idle_end_i;
+            plot(JettaData{i}.speed_fts(idx),...
+                 JettaData{i}.EngineRPM_rpm(idx),'o',...
+                "MarkerFaceColor",JettaTrialColors(i), ...
+                "MarkerEdgeColor",JettaTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Jetta Trial %d Final Idle: RPM vs Speed', i));
+            xlabel('Speed (ft/s)');
+            ylabel('Engine speed (rpm)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Jetta: Fuel rate vs time
+        if plot_jetta_fuelratetime
+            plot(JettaData{i}.Time_sec,...
+                 JettaData{i}.instantFuelRategals,'o',...
+                "MarkerFaceColor",JettaTrialColors(i), ...
+                "MarkerEdgeColor",JettaTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Jetta Trial %d Fuel Rate vs Time', i));
+            xlabel('Time (s)');
+            ylabel('Fuel rate (gal/s)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
+        end
+
+        % Jetta: Cumulative fuel vs time
+        if plot_jetta_fuelused
+            fuel_used = JettaData{i}.TripFuel_gal;
+            first_valid = find(fuel_used>0,1);
+            fuel_used = fuel_used - fuel_used(first_valid);
+            fuel_used(1:first_valid-1) = NaN;
+            plot(JettaData{i}.Time_sec,...
+                 fuel_used,'o',...
+                "MarkerFaceColor",JettaTrialColors(i), ...
+                "MarkerEdgeColor",JettaTrialColors(i),...
+                'MarkerSize',2.0);
+            hold on;
+            title(sprintf('Jetta Trial %d Cumulative Fuel vs Time', i));
+            xlabel('Time (s)');
+            ylabel('Fuel (gal)');
+            set(gca,'FontSize',14);
+            grid on;
+            legend(TrialLegends,'Location','best');
         end
     end
 
-    % Camry: Speed vs time
-    if plot_camry_vel
-        if i == 1, fig_camry_vel = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_camry_vel); hold on;
-        plot(CamryData{i}.Time_sec,CamryData{i}.speed_fts,'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Camry: Speed vs time'); xlabel('Time (s)'); ylabel('Speed (ft/s)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png || export_camry_png)
-            exportgraphics(fig_camry_vel,fullfile(plot_output_folder,'CamryAllTrials vel.png'),'Resolution',200);
-        end
+    if ~isempty(findobj(fig,'Type','line'))
+        exportgraphics(fig, fullfile(save_folder,...
+            plot_filenames(graph)), ...
+            'Resolution',300);
+    else
+        fprintf('Skipped %s: no data for this section.\n',...
+            plot_filenames(graph));
     end
-
-    % Camry: Kalman acceleration vs time
-    if plot_camry_accel
-        if i == 1, fig_camry_accel = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_camry_accel); hold on;
-        plot(CamryData{i}.Time_sec,CamryData{i}.filtered_accel,'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Camry: Kalman acceleration vs time'); xlabel('Time (s)'); ylabel('Acceleration (ft/s^2)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png || export_camry_png)
-            exportgraphics(fig_camry_accel,fullfile(plot_output_folder,'CamryAllTrials filtered accel.png'),'Resolution',200);
-        end
-    end
-
-    % Camry: Kalman speed vs time
-    if plot_camry_filtered_vel
-        if i == 1, fig_camry_filtered_vel = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_camry_filtered_vel); hold on;
-        plot(CamryData{i}.Time_sec,CamryData{i}.filtered_speed,'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Camry: Kalman speed vs time'); xlabel('Time (s)'); ylabel('Speed (ft/s)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png || export_camry_png)
-            exportgraphics(fig_camry_filtered_vel,fullfile(plot_output_folder,'CamryAllTrials filtered vel.png'),'Resolution',200);
-        end
-    end
-
-    % Camry: RPM vs time
-    if plot_camry_rpmtime
-        if i == 1, fig_camry_rpmtime = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_camry_rpmtime); hold on;
-        plot(CamryData{i}.Time_sec,CamryData{i}.EngineRPM_rpm,'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Camry: RPM vs time'); xlabel('Time (s)'); ylabel('Engine speed (rpm)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png || export_camry_png)
-            exportgraphics(fig_camry_rpmtime,fullfile(plot_output_folder,'CamryAllTrials rpm time.png'),'Resolution',200);
-        end
-    end
-
-    % Camry: RPM vs speed
-    if plot_camry_rpmvel
-        if i == 1, fig_camry_rpmvel = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_camry_rpmvel); hold on;
-        plot(CamryData{i}.speed_fts,CamryData{i}.EngineRPM_rpm,'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Camry: RPM vs speed'); xlabel('Speed (ft/s)'); ylabel('Engine speed (rpm)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png || export_camry_png)
-            exportgraphics(fig_camry_rpmvel,fullfile(plot_output_folder,'CamryAllTrials rpm vel.png'),'Resolution',200);
-        end
-    end
-
-    % Camry: Initial idle: RPM vs speed
-    if plot_camry_rpmvel_idle1
-        if i == 1, fig_camry_rpmvel_idle1 = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_camry_rpmvel_idle1); hold on;
-        idx = CamryMotion{i}.idle_start_i:CamryMotion{i}.idle_end_i;
-        plot(CamryData{i}.speed_fts(idx),CamryData{i}.EngineRPM_rpm(idx),'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Camry: Initial idle: RPM vs speed'); xlabel('Speed (ft/s)'); ylabel('Engine speed (rpm)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png || export_camry_png)
-            exportgraphics(fig_camry_rpmvel_idle1,fullfile(plot_output_folder,'CamryAllTrials rpm vel idle1.png'),'Resolution',200);
-        end
-    end
-
-    % Camry: Acceleration: RPM vs speed
-    if plot_camry_rpmvel_accel
-        if i == 1, fig_camry_rpmvel_accel = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_camry_rpmvel_accel); hold on;
-        idx = CamryMotion{i}.accel_start_i:CamryMotion{i}.accel_end_i;
-        plot(CamryData{i}.speed_fts(idx),CamryData{i}.EngineRPM_rpm(idx),'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Camry: Acceleration: RPM vs speed'); xlabel('Speed (ft/s)'); ylabel('Engine speed (rpm)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png || export_camry_png)
-            exportgraphics(fig_camry_rpmvel_accel,fullfile(plot_output_folder,'CamryAllTrials rpm vel accel.png'),'Resolution',200);
-        end
-    end
-
-    % Camry: Braking: RPM vs speed
-    if plot_camry_rpmvel_decel
-        if i == 1, fig_camry_rpmvel_decel = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_camry_rpmvel_decel); hold on;
-        idx = CamryMotion{i}.decel_start_i:numel(CamryData{i}.speed_fts);
-        if isfield(CamryMotion{i},'decel_end_i'), idx = CamryMotion{i}.decel_start_i:CamryMotion{i}.decel_end_i; end
-        plot(CamryData{i}.speed_fts(idx),CamryData{i}.EngineRPM_rpm(idx),'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Camry: Braking: RPM vs speed'); xlabel('Speed (ft/s)'); ylabel('Engine speed (rpm)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png || export_camry_png)
-            exportgraphics(fig_camry_rpmvel_decel,fullfile(plot_output_folder,'CamryAllTrials rpm vel decel.png'),'Resolution',200);
-        end
-    end
-
-    % Camry: Final idle: RPM vs speed
-    if plot_camry_rpmvel_idle2 && isfield(CamryMotion{i},'second_idle_start_i')
-        if i == 1, fig_camry_rpmvel_idle2 = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_camry_rpmvel_idle2); hold on;
-        idx = CamryMotion{i}.second_idle_start_i:CamryMotion{i}.second_idle_end_i;
-        plot(CamryData{i}.speed_fts(idx),CamryData{i}.EngineRPM_rpm(idx),'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Camry: Final idle: RPM vs speed'); xlabel('Speed (ft/s)'); ylabel('Engine speed (rpm)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png || export_camry_png)
-            exportgraphics(fig_camry_rpmvel_idle2,fullfile(plot_output_folder,'CamryAllTrials rpm vel idle2.png'),'Resolution',200);
-        end
-    end
-
-    % Camry: Fuel rate vs time
-    if plot_camry_fuelratetime
-        if i == 1, fig_camry_fuelratetime = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_camry_fuelratetime); hold on;
-        plot(CamryData{i}.Time_sec,CamryData{i}.fuelrate_lbs,'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Camry: Fuel rate vs time'); xlabel('Time (s)'); ylabel('Fuel rate (lb/s)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png || export_camry_png)
-            exportgraphics(fig_camry_fuelratetime,fullfile(plot_output_folder,'CamryAllTrials fuelrate time.png'),'Resolution',200);
-        end
-    end
-
-    % Camry: Cumulative fuel vs time
-    if plot_camry_fuelused
-        if i == 1, fig_camry_fuelused = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_camry_fuelused); hold on;
-        plot(CamryData{i}.Time_sec,CamryData{i}.cumulated_fuel_lb,'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Camry: Cumulative fuel vs time'); xlabel('Time (s)'); ylabel('Fuel (lb)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png || export_camry_png)
-            exportgraphics(fig_camry_fuelused,fullfile(plot_output_folder,'CamryAllTrials cumfuel.png'),'Resolution',200);
-        end
-    end
-
-    % Jetta: Distance vs time
-    if plot_jetta_pos
-        if i == 1, fig_jetta_pos = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_jetta_pos); hold on;
-        plot(JettaData{i}.Time_sec,JettaData{i}.trip_distanceft - JettaData{i}.trip_distanceft(1),'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Jetta: Distance vs time'); xlabel('Time (s)'); ylabel('Distance (ft)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png)
-            exportgraphics(fig_jetta_pos,fullfile(plot_output_folder,'JettaAllTrials pos.png'),'Resolution',200);
-        end
-    end
-
-    % Jetta: Speed vs time
-    if plot_jetta_vel
-        if i == 1, fig_jetta_vel = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_jetta_vel); hold on;
-        plot(JettaData{i}.Time_sec,JettaData{i}.speed_fts,'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Jetta: Speed vs time'); xlabel('Time (s)'); ylabel('Speed (ft/s)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png)
-            exportgraphics(fig_jetta_vel,fullfile(plot_output_folder,'JettaAllTrials vel.png'),'Resolution',200);
-        end
-    end
-
-    % Jetta: Logged acceleration vs time
-    if plot_jetta_accel
-        if i == 1, fig_jetta_accel = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_jetta_accel); hold on;
-        plot(JettaData{i}.Time_sec,JettaData{i}.Acceleration_fts2,'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Jetta: Logged acceleration vs time'); xlabel('Time (s)'); ylabel('Acceleration (ft/s^2)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png)
-            exportgraphics(fig_jetta_accel,fullfile(plot_output_folder,'JettaAllTrials accel.png'),'Resolution',200);
-        end
-    end
-
-    % Jetta: Kalman acceleration vs time
-    if plot_jetta_filtered_accel
-        if i == 1, fig_jetta_filtered_accel = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_jetta_filtered_accel); hold on;
-        plot(JettaData{i}.Time_sec,JettaData{i}.filtered_accel,'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Jetta: Kalman acceleration vs time'); xlabel('Time (s)'); ylabel('Acceleration (ft/s^2)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png)
-            exportgraphics(fig_jetta_filtered_accel,fullfile(plot_output_folder,'JettaAllTrials filtered accel.png'),'Resolution',200);
-        end
-    end
-
-    % Jetta: RPM vs time
-    if plot_jetta_rpmtime
-        if i == 1, fig_jetta_rpmtime = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_jetta_rpmtime); hold on;
-        plot(JettaData{i}.Time_sec,JettaData{i}.EngineRPM_rpm,'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Jetta: RPM vs time'); xlabel('Time (s)'); ylabel('Engine speed (rpm)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png)
-            exportgraphics(fig_jetta_rpmtime,fullfile(plot_output_folder,'JettaAllTrials rpm time.png'),'Resolution',200);
-        end
-    end
-
-    % Jetta: Initial idle: RPM vs speed
-    if plot_jetta_rpmvel_idle1
-        if i == 1, fig_jetta_rpmvel_idle1 = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_jetta_rpmvel_idle1); hold on;
-        idx = JettaMotion{i}.idle_start_i:JettaMotion{i}.idle_end_i;
-        plot(JettaData{i}.speed_fts(idx),JettaData{i}.EngineRPM_rpm(idx),'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Jetta: Initial idle: RPM vs speed'); xlabel('Speed (ft/s)'); ylabel('Engine speed (rpm)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png)
-            exportgraphics(fig_jetta_rpmvel_idle1,fullfile(plot_output_folder,'JettaAllTrials rpm vel idle1.png'),'Resolution',200);
-        end
-    end
-
-    % Jetta: Acceleration: RPM vs speed
-    if plot_jetta_rpmvel_accel
-        if i == 1, fig_jetta_rpmvel_accel = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_jetta_rpmvel_accel); hold on;
-        idx = JettaMotion{i}.accel_start_i:JettaMotion{i}.accel_end_i;
-        plot(JettaData{i}.speed_fts(idx),JettaData{i}.EngineRPM_rpm(idx),'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Jetta: Acceleration: RPM vs speed'); xlabel('Speed (ft/s)'); ylabel('Engine speed (rpm)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png)
-            exportgraphics(fig_jetta_rpmvel_accel,fullfile(plot_output_folder,'JettaAllTrials rpm vel accel.png'),'Resolution',200);
-        end
-    end
-
-    % Jetta: Braking: RPM vs speed
-    if plot_jetta_rpmvel_decel
-        if i == 1, fig_jetta_rpmvel_decel = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_jetta_rpmvel_decel); hold on;
-        idx = JettaMotion{i}.decel_start_i:numel(JettaData{i}.speed_fts);
-        if isfield(JettaMotion{i},'decel_end_i'), idx = JettaMotion{i}.decel_start_i:JettaMotion{i}.decel_end_i; end
-        plot(JettaData{i}.speed_fts(idx),JettaData{i}.EngineRPM_rpm(idx),'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Jetta: Braking: RPM vs speed'); xlabel('Speed (ft/s)'); ylabel('Engine speed (rpm)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png)
-            exportgraphics(fig_jetta_rpmvel_decel,fullfile(plot_output_folder,'JettaAllTrials rpm vel decel.png'),'Resolution',200);
-        end
-    end
-
-    % Jetta: Final idle: RPM vs speed
-    if plot_jetta_rpmvel_idle2 && isfield(JettaMotion{i},'second_idle_start_i')
-        if i == 1, fig_jetta_rpmvel_idle2 = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_jetta_rpmvel_idle2); hold on;
-        idx = JettaMotion{i}.second_idle_start_i:JettaMotion{i}.second_idle_end_i;
-        plot(JettaData{i}.speed_fts(idx),JettaData{i}.EngineRPM_rpm(idx),'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Jetta: Final idle: RPM vs speed'); xlabel('Speed (ft/s)'); ylabel('Engine speed (rpm)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png)
-            exportgraphics(fig_jetta_rpmvel_idle2,fullfile(plot_output_folder,'JettaAllTrials rpm vel idle2.png'),'Resolution',200);
-        end
-    end
-
-    % Jetta: Fuel rate vs time
-    if plot_jetta_fuelratetime
-        if i == 1, fig_jetta_fuelratetime = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_jetta_fuelratetime); hold on;
-        plot(JettaData{i}.Time_sec,JettaData{i}.instantFuelRategals,'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Jetta: Fuel rate vs time'); xlabel('Time (s)'); ylabel('Fuel rate (gal/s)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png)
-            exportgraphics(fig_jetta_fuelratetime,fullfile(plot_output_folder,'JettaAllTrials fuelrate time.png'),'Resolution',200);
-        end
-    end
-
-    % Jetta: Cumulative fuel vs time
-    if plot_jetta_fuelused
-        if i == 1, fig_jetta_fuelused = figure('Color','w','Position',[100 100 650 450]); end
-        figure(fig_jetta_fuelused); hold on;
-        fuel_used = JettaData{i}.TripFuel_gal;
-        first_valid = find(fuel_used>0,1);
-        fuel_used = fuel_used - fuel_used(first_valid);
-        fuel_used(1:first_valid-1) = NaN;
-        plot(JettaData{i}.Time_sec,fuel_used,'.','Color',trial_colors(i,:), ...
-            'MarkerSize',6,'DisplayName',sprintf('Trial %d',i));
-        title('Jetta: Cumulative fuel vs time'); xlabel('Time (s)'); ylabel('Fuel (gal)');
-        set(gca,'FontSize',14); grid on; legend('Location','best');
-        if i == 3 && (save_plot_png)
-            exportgraphics(fig_jetta_fuelused,fullfile(plot_output_folder,'JettaAllTrials cumfuel.png'),'Resolution',200);
-        end
-    end
-
+    close(fig);
 end
 
-%% Fit acceleration, RPM and fuel rate by phase
-if fit_models || predict_courses || save_model_results || plot_jetta_phase_fits || plot_camry_phase_fits || ...
-        plot_jetta_courses || plot_camry_courses
-    [JettaModel,JettaFitData,JettaTrialSummary] = fitCarPhases(JettaData,"Jetta","gal");
-    [CamryModel,CamryFitData,CamryTrialSummary] = fitCarPhases(CamryData,"Camry","lb");
-    Model = {JettaModel,CamryModel};
-    PhaseData = {JettaFitData,CamryFitData};
-    TrialSummary = [JettaTrialSummary;CamryTrialSummary];
-end
+%%
+save("JettaData.mat");
+save("CamryData.mat");
 
-%% Plot phase fits: acceleration, RPM and fuel rate
-fit_flags = [plot_jetta_phase_fits,plot_camry_phase_fits];
-phase_names = ["Acceleration","Braking"];
-for car = 1:2
-    if ~fit_flags(car), continue; end
-    M = Model{car};
-    fig = figure('Color','w','Position',[100 100 1400 1000]);
-    for phase = 1:2
-        P = PhaseData{car}{phase};
-        t_fit = linspace(0,max(P.time),200);
-        v_fit = linspace(min(P.speed),max(P.speed),200);
-        subplot(3,2,phase); hold on;
-        for i = 1:3
-            idx = P.trial_id==i;
-            plot(P.time(idx),P.accel(idx),'.','Color',trial_colors(i,:), ...
-                'DisplayName',sprintf('Trial %d Kalman',i));
-        end
-        plot(t_fit,M.constant_a(phase)*ones(size(t_fit)),'--','Color',[.5 .5 .5], ...
-            'LineWidth',1.5,'DisplayName','Constant mean');
-        plot(t_fit,polyval(fliplr(M.motion_param(phase,:)),t_fit),'k', ...
-            'LineWidth',1.5,'DisplayName','Linear fit');
-        title(phase_names(phase)+" phase: fitted acceleration");
-        xlabel('Phase time (s)'); ylabel('Acceleration (ft/s^2)'); grid on; set(gca,'FontSize',14);
-        if phase == 1
-            legend('Position',[.17 .01 .66 .035],'NumColumns',5,'FontSize',11);
-        end
-
-        subplot(3,2,phase+2); hold on;
-        for i = 1:3
-            idx = P.trial_id==i;
-            plot(P.speed(idx),P.rpm(idx),'.','Color',trial_colors(i,:));
-        end
-        plot(v_fit,polyval(M.rpm_param(phase,:),v_fit),'k','LineWidth',1.5);
-        title(phase_names(phase)+" RPM fit");
-        xlabel('Speed (ft/s)'); ylabel('Engine speed (rpm)'); grid on; set(gca,'FontSize',14);
-
-        subplot(3,2,phase+4); hold on;
-        for i = 1:3
-            idx = P.trial_id==i;
-            plot(P.speed(idx),P.fuel(idx),'.','Color',trial_colors(i,:));
-        end
-        plot(v_fit,max(0,polyval(M.fuel_param(phase,:),v_fit)),'k','LineWidth',1.5);
-        title(phase_names(phase)+" fuel-rate fit");
-        xlabel('Speed (ft/s)'); ylabel("Fuel rate ("+M.fuel_unit+"/s)"); grid on; set(gca,'FontSize',14);
-    end
-    sgtitle(M.name+" phase models");
-    if save_plot_png
-        exportgraphics(fig,fullfile(plot_output_folder,M.name+" model fits.png"),'Resolution',200);
-    end
-end
-
-%% Predict and plot the four courses
-if predict_courses || plot_jetta_courses || plot_camry_courses
-    [JettaCourses,JettaCourseSummary] = predictCarCourses(JettaModel);
-    [CamryCourses,CamryCourseSummary] = predictCarCourses(CamryModel);
-    Courses = [JettaCourses;CamryCourses];
-    CourseSummary = [JettaCourseSummary;CamryCourseSummary];
-    disp(CourseSummary);
-    course_flags = [plot_jetta_courses,plot_camry_courses];
-    for car = 1:2
-        if ~course_flags(car), continue; end
-        fig = plotCarCourses(Courses(car,:),Model{car}.name,Model{car}.fuel_unit);
-        if save_plot_png
-            exportgraphics(fig,fullfile(plot_output_folder,Model{car}.name+" courses.png"),'Resolution',200);
-        end
-    end
-end
-
-%% Save model results only when requested
-if save_model_results
-    save(fullfile(plot_output_folder,'EQ1_Simple_Results.mat'),'Model','PhaseData','TrialSummary');
-    writetable(TrialSummary,fullfile(plot_output_folder,'EQ1_Trial_Summary.csv'));
-    if exist('Courses','var')
-        save(fullfile(plot_output_folder,'EQ1_Simple_Results.mat'),'Courses','CourseSummary','-append');
-        writetable(CourseSummary,fullfile(plot_output_folder,'EQ1_Course_Summary.csv'));
-    end
-end

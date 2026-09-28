@@ -2,7 +2,7 @@
 % assuming accel is already filtered and smooth
 
 function motion_sections = detectMotionSections(speed)
-    idle_tolerance = 0.05;
+    idle_tolerance = 0.2;
     motion_sections.idle_start_i = 1;
     motion_sections.second_idle_end_i = numel(speed);
     dela_speed_tolerance = 0.2;
