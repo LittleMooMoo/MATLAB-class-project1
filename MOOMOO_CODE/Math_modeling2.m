@@ -64,3 +64,25 @@ hold off;
 subplot(3,2,3);
 plot(accel_time,accel_fuel_over_time);
 
+<<<<<<< Updated upstream
+=======
+subplot(2,1,1);
+plot(const_motion_time,const_motion.distance);
+plot(accel_motion.accel_time)
+
+%% Rpm modeling
+% assume rpm at a constant 20mph is also constant 
+
+% RPM for constant 20mph
+t = 0:1:30;
+rpm = 1500 *(ones(size(t)));
+
+figure
+subplot(3,2,1)
+plot (t,rpm)
+xlabel('time(s)')
+ylabel('RPM')
+title('RPM at 20mph')
+grid on 
+
+>>>>>>> Stashed changes
