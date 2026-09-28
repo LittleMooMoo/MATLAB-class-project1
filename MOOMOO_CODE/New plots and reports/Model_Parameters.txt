@@ -1,0 +1,210 @@
+MODEL PARAMETERS: Jetta and Camry
+Source: ModelPredictionData.mat
+tau is time since the start of each phase, in seconds.
+Coefficients are printed in descending powers of tau.
+Fuel quantities use US gallons.
+
+a = a1*tau + a0
+v = v2*tau^2 + v1*tau + v0
+x = x3*tau^3 + x2*tau^2 + x1*tau + x0
+
+Mean trial coefficients: accel
+Parameter    Unit                  Jetta          Camry
+a1           ft/s^3             1.629081      0.2394326
+a0           ft/s^2             1.992532       1.966737
+v2           ft/s^3            0.8145403      0.1197163
+v1           ft/s^2             1.992532       1.966737
+v0           ft/s               1.518907       2.734033
+x3           ft/s^3            0.2715134     0.03990544
+x2           ft/s^2             0.996266      0.9833686
+x1           ft/s               1.518907       2.734033
+x0           ft                0.1018864     0.07427457
+
+Mean trial coefficients: decel
+Parameter    Unit                  Jetta          Camry
+a1           ft/s^3             -1.81889     -0.2047279
+a0           ft/s^2            -3.042331      -3.821522
+v2           ft/s^3           -0.9094449      -0.102364
+v1           ft/s^2            -3.042331      -3.821522
+v0           ft/s               53.16176       51.03529
+x3           ft/s^3           -0.3031483    -0.03412132
+x2           ft/s^2            -1.521165      -1.910761
+x1           ft/s               53.16176       51.03529
+x0           ft                 182.2726       348.8506
+
+RPM = mR*u + bR; fuel rate = mF*u + bF
+
+RPM and fuel coefficients: accel
+Parameter    Unit                  Jetta          Camry
+mR           rpm/mph            55.98708       23.74182
+bR           rpm                1990.948       1625.715
+mF           (gal/s)/mph    3.980999e-05   1.367334e-05
+bF           gal/s          0.0006537532   0.0003285408
+
+RPM and fuel coefficients: decel
+Parameter    Unit                  Jetta          Camry
+mR           rpm/mph            62.45502       21.34011
+bR           rpm                466.3469       595.3544
+mF           (gal/s)/mph   -1.830785e-11  -2.682297e-06
+bF           gal/s          0.0001433611    0.000108384
+
+Other values                    Jetta          Camry
+Idle RPM (rpm)               928.2077       685.4181
+Max measured (mph)           37.28227       35.41816
+RPM is limited below by idle RPM; fuel rate is limited to >= 0.
+Cruise uses the mean accel/decel fits at the cruise speed.
+RPM fitting uses speed > 0 and RPM > 0.
+Fuel fitting uses fuel rate >= 0 only.
+Before averaging, a trial fuel fit negative at 0 or 25 mph
+is replaced by its constant phase mean.
+Idle selections: Jetta initial-idle indices; Camry RPM < 900,
+including zero readings in the Camry selection.
+
+Jetta: recorded phase durations
+Phase            Mean (s)      Max (s)     Trials
+idle1               3.448        7.122          3
+accel            5.370667         5.93          3
+decel            7.365333       10.203          3
+idle2            1.082333        1.508          3
+
+Jetta: saved idle motion constants
+Phase          a (ft/s^2)     v (ft/s)       x (ft)
+idle1                   0            0            0
+idle2                   0            0     349.4511
+
+Camry: recorded phase durations
+Phase            Mean (s)      Max (s)     Trials
+idle1           0.1126667        0.152          3
+accel            14.24333       16.612          3
+decel            9.730333       10.851          3
+idle2        Not recorded
+
+Camry: saved idle motion constants
+Phase          a (ft/s^2)     v (ft/s)       x (ft)
+idle1                   0            0            0
+
+Course    Distance (ft)   Target (mph)  Average (mph)
+1                   300             15            NaN
+2                   600             25            NaN
+3                  1320            NaN             15
+4                  1320            NaN            NaN
+NaN here means that the course does not prescribe that value.
+
+Jetta Course 1: time and coefficient tables
+Phase         t_start (s)   Length (s)
+Accel                   0     4.115913
+  a coefficients (ft/s^2 polynomial): 1.629081 1.992532 
+  v coefficients (ft/s polynomial): 0.8145403 1.992532 0 
+  x coefficients (ft polynomial): 0.2715134 0.996266 0 0 
+Cruise           4.115913     12.00867
+  a coefficients (ft/s^2 polynomial): 0 
+  v coefficients (ft/s polynomial): 0 22 
+  x coefficients (ft polynomial): 0 22 35.80919 
+Cruise RPM: 2116.963 rpm; fuel rate: 0.0006971319 gal/s
+
+Camry Course 1: time and coefficient tables
+Phase         t_start (s)   Length (s)
+Accel                   0       7.6364
+  a coefficients (ft/s^2 polynomial): 0.2394326 1.966737 
+  v coefficients (ft/s polynomial): 0.1197163 1.966737 0 
+  x coefficients (ft polynomial): 0.03990544 0.9833686 0 0 
+Cruise             7.6364     10.22204
+  a coefficients (ft/s^2 polynomial): 0 
+  v coefficients (ft/s polynomial): 0 22 
+  x coefficients (ft polynomial): 0 22 75.11518 
+Cruise RPM: 1448.649 rpm; fuel rate: 0.0003008953 gal/s
+
+Jetta Course 2: time and coefficient tables
+Phase         t_start (s)   Length (s)
+Accel                   0     5.596806
+  a coefficients (ft/s^2 polynomial): 1.629081 1.992532 
+  v coefficients (ft/s polynomial): 0.8145403 1.992532 0 
+  x coefficients (ft polynomial): 0.2715134 0.996266 0 0 
+Cruise           5.596806      11.2831
+  a coefficients (ft/s^2 polynomial): 0 
+  v coefficients (ft/s polynomial): 0 36.66667 
+  x coefficients (ft polynomial): 0 36.66667 78.80783 
+Brake             16.8799     4.893596
+  a coefficients (ft/s^2 polynomial): -1.81889 -3.042331 
+  v coefficients (ft/s polynomial): -0.9094449 -3.042331 36.66667 
+  x coefficients (ft polynomial): -0.3031483 -1.521165 36.66667 492.5214 
+Cruise RPM: 2709.174 rpm; fuel rate: 0.0008961818 gal/s
+
+Camry Course 2: time and coefficient tables
+Phase         t_start (s)   Length (s)
+Accel                   0     11.11851
+  a coefficients (ft/s^2 polynomial): 0.2394326 1.966737 
+  v coefficients (ft/s polynomial): 0.1197163 1.966737 0 
+  x coefficients (ft polynomial): 0.03990544 0.9833686 0 0 
+Cruise           11.11851      7.36341
+  a coefficients (ft/s^2 polynomial): 0 
+  v coefficients (ft/s polynomial): 0 36.66667 
+  x coefficients (ft polynomial): 0 36.66667 176.4146 
+Brake            18.48192     7.916195
+  a coefficients (ft/s^2 polynomial): -0.2047279 -3.821522 
+  v coefficients (ft/s polynomial): -0.102364 -3.821522 36.66667 
+  x coefficients (ft polynomial): -0.03412132 -1.910761 36.66667 446.4063 
+Cruise RPM: 1674.059 rpm; fuel rate: 0.0003558505 gal/s
+
+Jetta Course 3: time and coefficient tables
+Phase         t_start (s)   Length (s)
+Accel                   0     4.227481
+  a coefficients (ft/s^2 polynomial): 1.629081 1.992532 
+  v coefficients (ft/s polynomial): 0.8145403 1.992532 0 
+  x coefficients (ft polynomial): 0.2715134 0.996266 0 0 
+Cruise           4.227481     55.77252
+  a coefficients (ft/s^2 polynomial): 0 
+  v coefficients (ft/s polynomial): 0 22.98053 
+  x coefficients (ft polynomial): 0 22.98053 38.3182 
+Cruise RPM: 2156.555 rpm; fuel rate: 0.0007104392 gal/s
+
+Camry Course 3: time and coefficient tables
+Phase         t_start (s)   Length (s)
+Accel                   0     8.099132
+  a coefficients (ft/s^2 polynomial): 0.2394326 1.966737 
+  v coefficients (ft/s polynomial): 0.1197163 1.966737 0 
+  x coefficients (ft polynomial): 0.03990544 0.9833686 0 0 
+Cruise           8.099132     51.90087
+  a coefficients (ft/s^2 polynomial): 0 
+  v coefficients (ft/s polynomial): 0 23.78177 
+  x coefficients (ft polynomial): 0 23.78177 85.70556 
+Cruise RPM: 1476.033 rpm; fuel rate: 0.0003075715 gal/s
+
+Jetta Course 4: time and coefficient tables
+Phase         t_start (s)   Length (s)
+Accel                   0     15.80153
+  a coefficients (ft/s^2 polynomial): 1.629081 1.992532 
+  v coefficients (ft/s polynomial): 0.8145403 1.992532 0 
+  x coefficients (ft polynomial): 0.2715134 0.996266 0 0 
+
+Camry Course 4: time and coefficient tables
+Phase         t_start (s)   Length (s)
+Accel                   0      25.6468
+  a coefficients (ft/s^2 polynomial): 0.2394326 1.966737 
+  v coefficients (ft/s polynomial): 0.1197163 1.966737 0 
+  x coefficients (ft polynomial): 0.03990544 0.9833686 0 0 
+
+Shared prediction settings
+Maximum phase sample spacing: 0.05 s
+Idle RPM display duration: 15 s before each course
+Course 2 also shows 15 s of final idle RPM.
+Idle display is excluded from course travel time and fuel totals.
+Camry gasoline density: 6.17 lb/US gal
+Speed conversion: 5280/3600 ft/s per mph
+Root imaginary-part tolerance: 1e-9 s
+Cruise distance rounding tolerance: 1e-8 ft
+
+Kalman filter settings
+State = [speed; acceleration]; H = [1 0]
+Initial state = [0;0]; initial covariance P = zeros(2,2)
+R = 1 (ft/s)^2; initial q = 1 ft^2/s^5
+F = [1 dt; 0 1]
+Q = q*[dt^3/3 dt^2/2; dt^2/2 dt]
+dt comes from recorded timestamps. q updates after each sample.
+q_next = var(gradient(a,t).*dt)/dt, using acceleration history.
+
+Motion section detection settings
+Idle speed threshold: 0.2 ft/s
+Positive adjacent speed-change threshold: 0.2 ft/s
+Extrapolation flag: acceleration duration exceeds the longest
+recorded accel phase, or speed exceeds the measured maximum.

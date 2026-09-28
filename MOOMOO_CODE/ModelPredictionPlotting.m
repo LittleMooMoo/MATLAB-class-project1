@@ -1,21 +1,25 @@
-%% Export mean-model predictions; run ModelPrediction first
-assert(exist('Predictions','var') == 1 && ...
-    exist('VehicleModels','var') == 1, 'Run ModelPrediction first.');
-assert(VehicleModels{1}.fuel_unit == "gal" && ...
-    VehicleModels{2}.fuel_unit == "gal", ...
-    'Run ModelPrediction again to use US gallons for both cars.');
-save_folder = fullfile(fileparts(mfilename('fullpath')), ...
-    "New plots and reports");
-if ~isfolder(save_folder)
-    mkdir(save_folder);
-end
+%% Plot all the model predictions 
+
+%% Load the saved predictions and plot them
+
+% Author: Jiale Jiang
+% Editor: Jiale Jiang
+
+% load the results saved by ModelPrediction so we do not need them open;
+load("ModelPredictionData.mat", "Predictions", "VehicleModels", "Courses");
+save_folder =  ...
+    "C:\Users\jiaxi\OneDrive\Documentos\GitHub\MATLAB-class-project1\MOOMOO_CODE\New plots and reports";
 % Position, speed, accel, RPM/time, five RPM/speed phases, then fuel plots.
+% 12 "trues" in a vector , to plot all 12 plots;
 plot_graphs = true(1,12);
 plot_idle = false;
 plot_names = ["Pos","Vel","Accel","RPMTime", ...
     "Idle1RPMVel","AccelRPMVel","CruiseRPMVel","DecelRPMVel","Idle2RPMVel", ...
     "FuelRate","FuelUsed","FuelEconomy"];
-% Phase IDs: 1 accel, 2 cruise, 3 decel; 0/4 reserved for initial/final idle.
+
+% Each phase can now be represented using the index number from the
+% follwoing vector: 1 accel, 2 cruise, 3 decel; 0/4 reserved for 
+% idle
 rpm_phase_names = ["Initial Idle","Acceleration","Cruising", ...
     "Deceleration","Final Idle"];
 car_colors = ["b","r"];
@@ -80,22 +84,42 @@ for course = 1:numel(Courses)
             end
             % RPM vs time
             if plot_rpmtime
+                % negative time is idle before the course starts moving;
+                plot(prediction.idle1_time_sec,prediction.idle1_rpm, ...
+                    'Color',color,'LineStyle',line_style,'LineWidth',1.5, ...
+                    'HandleVisibility','off');
                 plot(prediction.time_sec,prediction.rpm, ...
                     'Color',color,'LineStyle',line_style,'LineWidth',1.5, ...
                     'DisplayName',legend_name);
+                if ~isempty(prediction.idle2_time_sec)
+                    plot(prediction.idle2_time_sec,prediction.idle2_rpm, ...
+                        'Color',color,'LineStyle',line_style,'LineWidth',1.5, ...
+                        'HandleVisibility','off');
+                end
                 plot_title = "RPM vs Time";
-                xlabel('Time (s)');
+                xlabel('Time from motion start (s)');
                 ylabel('Engine RPM (rpm)');
             end
             % RPM vs speed
             if plot_rpmvel
-                index = find(prediction.phase == graph-5);
-                if isempty(index) || prediction.time_sec(index(end)) <= ...
-                        prediction.time_sec(index(1))
-                    continue;
+                if graph == 5
+                    speed = zeros(size(prediction.idle1_rpm));
+                    rpm = prediction.idle1_rpm;
+                elseif graph == 9
+                    if isempty(prediction.idle2_rpm)
+                        continue;
+                    end
+                    speed = zeros(size(prediction.idle2_rpm));
+                    rpm = prediction.idle2_rpm;
+                else
+                    index = find(prediction.phase == graph-5);
+                    if isempty(index) || prediction.time_sec(index(end)) <= ...
+                            prediction.time_sec(index(1))
+                        continue;
+                    end
+                    speed = prediction.speed_fts(index);
+                    rpm = prediction.rpm(index);
                 end
-                speed = prediction.speed_fts(index);
-                rpm = prediction.rpm(index);
                 marker = 'none';
                 % A constant speed/RPM pair appears as one point.
                 if all(speed == speed(1)) && all(rpm == rpm(1))
@@ -168,6 +192,8 @@ if plot_idle
     title('Predicted Initial Idle Acceleration');
     xlabel('Time since initial idle began (s)');
     ylabel('Acceleration (ft/s^2)');
+    % this gca means get current axis, it will set the current axis's tick
+    % number font size to the requested size;
     set(gca,'FontSize',14);
     ylim([-1,1]);
     grid on;

@@ -1,0 +1,586 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      -->
+<title>DataModle</title>
+<meta name="generator" content="MATLAB 24.2">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2026-09-28">
+<meta name="DC.source" content="DataModle.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+</head>
+<body>
+<div class="content">
+<h2>Contents</h2>
+<div>
+<ul>
+<li>
+<a href="#1">Modling script for all data, stores all the fitted paramters</a>
+</li>
+<li>
+<a href="#2">Load all the needed variables and workspaces</a>
+</li>
+<li>
+<a href="#3">Motion fits: acceleration degree 1, velocity degree 2, position degree 3</a>
+</li>
+<li>
+<a href="#4">Save only the updated motion structures;</a>
+</li>
+</ul>
+</div>
+<h2 id="1">Modling script for all data, stores all the fitted paramters</h2>
+<pre class="codeinput">
+<span class="comment">% Author: Jiale Jiang</span>
+<span class="comment">% Editor: Jiale Jiang</span>
+</pre>
+<h2 id="2">Load all the needed variables and workspaces</h2>
+<pre class="codeinput">load(<span class="string">"DataParser.mat"</span>, <span class="string">"JettaData"</span>, <span class="string">"CamryData"</span>, <span class="keyword">...</span>
+    <span class="string">"JettaMotion"</span>, <span class="string">"CamryMotion"</span>);
+</pre>
+<h2 id="3">Motion fits: acceleration degree 1, velocity degree 2, position degree 3</h2>
+<pre class="codeinput">
+<span class="comment">% since there are a lot of obvious signs in our raw data plots that the</span>
+<span class="comment">% acceleration are actually linear, not constant in our tested courses, so</span>
+<span class="comment">% I decided to use linear acceleration, quadratic velocity and 3rd order</span>
+<span class="comment">% position for our model, more details will be shown in our final report;</span>
+
+<span class="comment">% Coefficients use elapsed time: tau = time - time_start_sec.</span>
+<span class="comment">% elapsed time means the actual time that has passed when a motion phase</span>
+<span class="comment">% start, for example, idle maybe from 0-10 sec, and acceleration starts</span>
+<span class="comment">% from 10 - 15sec, but when we fit our model, we want to fit it locally, so</span>
+<span class="comment">% if we are at 12 sec, then the actual acceleration time will be 2 sec,</span>
+<span class="comment">% this will give us more accurate fit for the model;</span>
+
+<span class="comment">% Units: seconds, ft/s^2, ft/s, and distance in ft from the trial start.</span>
+
+<span class="comment">% use a for loop</span>
+<span class="keyword">for</span> i = 1:3
+    <span class="comment">% adding new struct members;</span>
+    JettaMotion{i}.fits = struct();
+    CamryMotion{i}.fits = struct();
+
+    <span class="comment">% Initial idle: zero acceleration/speed and constant position</span>
+
+    <span class="comment">% these intervals come from our motiondetection function, it was called</span>
+    <span class="comment">% in the DataParser.m script file;</span>
+
+    <span class="comment">% These following two lines are just used to wrap those intervals so we</span>
+    <span class="comment">% can use them easier in the vector without having to write a long line</span>
+    <span class="comment">% just for a vector's interval;</span>
+    Jetta_idle1_interval = <span class="keyword">...</span>
+        JettaMotion{i}.idle_start_i:JettaMotion{i}.idle_end_i;
+    JettaMotion{i}.fits.idle1.indices = Jetta_idle1_interval;
+
+    JettaMotion{i}.fits.idle1.time_start_sec = <span class="keyword">...</span>
+        JettaData{i}.Time_sec(Jetta_idle1_interval(1));
+
+    <span class="comment">% compute the actual elapsed time in this motion phase(idle)</span>
+    tau = JettaData{i}.Time_sec(Jetta_idle1_interval) - <span class="keyword">...</span>
+        JettaMotion{i}.fits.idle1.time_start_sec;
+    JettaMotion{i}.fits.idle1.duration_sec = tau(end);
+
+    <span class="comment">% we use constant position, 0 accel and velocity ,</span>
+    <span class="comment">% during the initial idle of the car, at</span>
+    <span class="comment">% that time, the car didn't start moving yet;</span>
+    JettaMotion{i}.fits.idle1.fitted_accel_param = 0;
+
+    JettaMotion{i}.fits.idle1.fitted_velocity_param = 0;
+
+    <span class="comment">% this line is to calculate the constant displacement of the car ,</span>
+    <span class="comment">% during its idling</span>
+    JettaMotion{i}.fits.idle1.fitted_position_param = <span class="keyword">...</span>
+        JettaData{i}.trip_distanceft(Jetta_idle1_interval(1)) - <span class="keyword">...</span>
+            JettaData{i}.trip_distanceft(1);
+
+    <span class="comment">% repeat the same idle modling for Camry</span>
+    Camry_idle1_interval = <span class="keyword">...</span>
+        CamryMotion{i}.idle_start_i:CamryMotion{i}.idle_end_i;
+    CamryMotion{i}.fits.idle1.indices = Camry_idle1_interval;
+    CamryMotion{i}.fits.idle1.time_start_sec = <span class="keyword">...</span>
+        CamryData{i}.Time_sec(Camry_idle1_interval(1));
+    tau = CamryData{i}.Time_sec(Camry_idle1_interval) - <span class="keyword">...</span>
+        CamryMotion{i}.fits.idle1.time_start_sec;
+    CamryMotion{i}.fits.idle1.duration_sec = tau(end);
+    CamryMotion{i}.fits.idle1.fitted_accel_param = 0;
+    CamryMotion{i}.fits.idle1.fitted_velocity_param = 0;
+    CamryMotion{i}.fits.idle1.fitted_position_param = <span class="keyword">...</span>
+        CamryData{i}.trip_distanceft(Camry_idle1_interval(1)) - <span class="keyword">...</span>
+            CamryData{i}.trip_distanceft(1);
+
+    <span class="comment">% Acceleration</span>
+    Jetta_accel_interval = <span class="keyword">...</span>
+        JettaMotion{i}.accel_start_i:JettaMotion{i}.accel_end_i;
+
+    JettaMotion{i}.fits.accel.indices = Jetta_accel_interval;
+
+    JettaMotion{i}.fits.accel.time_start_sec = <span class="keyword">...</span>
+        JettaData{i}.Time_sec(Jetta_accel_interval(1));
+
+    tau = JettaData{i}.Time_sec(Jetta_accel_interval) - <span class="keyword">...</span>
+        JettaMotion{i}.fits.accel.time_start_sec;
+
+    JettaMotion{i}.fits.accel.duration_sec = tau(end);
+
+    <span class="comment">% this line fits the acceleration using first order in the local motion</span>
+    <span class="comment">% phase interval;</span>
+    JettaMotion{i}.fits.accel.fitted_accel_param = <span class="keyword">...</span>
+        polyfit(tau, JettaData{i}.filtered_accel(Jetta_accel_interval), 1);
+
+    JettaMotion{i}.fits.accel.fitted_velocity_param = <span class="keyword">...</span>
+        polyint(JettaMotion{i}.fits.accel.fitted_accel_param, <span class="keyword">...</span>
+        JettaData{i}.speed_fts(Jetta_accel_interval(1)));
+
+    JettaMotion{i}.fits.accel.fitted_position_param = <span class="keyword">...</span>
+        polyint(JettaMotion{i}.fits.accel.fitted_velocity_param, <span class="keyword">...</span>
+        JettaData{i}.trip_distanceft(Jetta_accel_interval(1)) - <span class="keyword">...</span>
+            JettaData{i}.trip_distanceft(1));
+
+    Camry_accel_interval = <span class="keyword">...</span>
+        CamryMotion{i}.accel_start_i:CamryMotion{i}.accel_end_i;
+
+    CamryMotion{i}.fits.accel.indices = Camry_accel_interval;
+
+    CamryMotion{i}.fits.accel.time_start_sec = <span class="keyword">...</span>
+        CamryData{i}.Time_sec(Camry_accel_interval(1));
+
+    tau = CamryData{i}.Time_sec(Camry_accel_interval) - <span class="keyword">...</span>
+        CamryMotion{i}.fits.accel.time_start_sec;
+
+    CamryMotion{i}.fits.accel.duration_sec = tau(end);
+
+    CamryMotion{i}.fits.accel.fitted_accel_param = <span class="keyword">...</span>
+        polyfit(tau, CamryData{i}.filtered_accel(Camry_accel_interval), 1);
+
+    CamryMotion{i}.fits.accel.fitted_velocity_param = <span class="keyword">...</span>
+        polyint(CamryMotion{i}.fits.accel.fitted_accel_param, <span class="keyword">...</span>
+        CamryData{i}.speed_fts(Camry_accel_interval(1)));
+
+    CamryMotion{i}.fits.accel.fitted_position_param = <span class="keyword">...</span>
+        polyint(CamryMotion{i}.fits.accel.fitted_velocity_param, <span class="keyword">...</span>
+        CamryData{i}.trip_distanceft(Camry_accel_interval(1)) - <span class="keyword">...</span>
+            CamryData{i}.trip_distanceft(1));
+
+    <span class="comment">% this line first assign the deceleration end point as the end of</span>
+    <span class="comment">% motion point, if the car does not stop and idle after deceleration</span>
+    Jetta_decel_end = numel(JettaData{i}.Time_sec);
+
+    <span class="comment">% this if checks if the JettaMotion actually contains a deceleration</span>
+    <span class="comment">% end point, if it does, then it will assign the deceleration end point</span>
+    <span class="comment">% back to the original end point calculated from the motion detection</span>
+    <span class="comment">% code;</span>
+    <span class="comment">% reason for this is that some car does not stop at 0 after decl and</span>
+    <span class="comment">% idle so the motion detection function cannot detect when the car</span>
+    <span class="comment">% stops its deceleration, so then the deceleration end point will just</span>
+    <span class="comment">% set to be the end of the motion;</span>
+    <span class="keyword">if</span> isfield(JettaMotion{i}, <span class="string">'decel_end_i'</span>)
+        Jetta_decel_end = JettaMotion{i}.decel_end_i;
+    <span class="keyword">end</span>
+
+    Jetta_decel_interval = JettaMotion{i}.decel_start_i:Jetta_decel_end;
+
+    JettaMotion{i}.fits.decel.indices = Jetta_decel_interval;
+
+    JettaMotion{i}.fits.decel.time_start_sec = <span class="keyword">...</span>
+        JettaData{i}.Time_sec(Jetta_decel_interval(1));
+
+    tau = JettaData{i}.Time_sec(Jetta_decel_interval) - <span class="keyword">...</span>
+        JettaMotion{i}.fits.decel.time_start_sec;
+
+    JettaMotion{i}.fits.decel.duration_sec = tau(end);
+
+    JettaMotion{i}.fits.decel.fitted_accel_param = <span class="keyword">...</span>
+        polyfit(tau, JettaData{i}.filtered_accel(Jetta_decel_interval), 1);
+
+    JettaMotion{i}.fits.decel.fitted_velocity_param = <span class="keyword">...</span>
+        polyint(JettaMotion{i}.fits.decel.fitted_accel_param, <span class="keyword">...</span>
+        JettaData{i}.speed_fts(Jetta_decel_interval(1)));
+
+    JettaMotion{i}.fits.decel.fitted_position_param = <span class="keyword">...</span>
+        polyint(JettaMotion{i}.fits.decel.fitted_velocity_param, <span class="keyword">...</span>
+        JettaData{i}.trip_distanceft(Jetta_decel_interval(1)) - <span class="keyword">...</span>
+            JettaData{i}.trip_distanceft(1));
+
+    <span class="comment">% same logic for Camry</span>
+    Camry_decel_end = numel(CamryData{i}.Time_sec);
+    <span class="keyword">if</span> isfield(CamryMotion{i}, <span class="string">'decel_end_i'</span>)
+        Camry_decel_end = CamryMotion{i}.decel_end_i;
+    <span class="keyword">end</span>
+
+    Camry_decel_interval = CamryMotion{i}.decel_start_i:Camry_decel_end;
+    CamryMotion{i}.fits.decel.indices = Camry_decel_interval;
+    CamryMotion{i}.fits.decel.time_start_sec = <span class="keyword">...</span>
+        CamryData{i}.Time_sec(Camry_decel_interval(1));
+    tau = CamryData{i}.Time_sec(Camry_decel_interval) - <span class="keyword">...</span>
+        CamryMotion{i}.fits.decel.time_start_sec;
+    CamryMotion{i}.fits.decel.duration_sec = tau(end);
+    CamryMotion{i}.fits.decel.fitted_accel_param = <span class="keyword">...</span>
+        polyfit(tau, CamryData{i}.filtered_accel(Camry_decel_interval), 1);
+    CamryMotion{i}.fits.decel.fitted_velocity_param = <span class="keyword">...</span>
+        polyint(CamryMotion{i}.fits.decel.fitted_accel_param, <span class="keyword">...</span>
+        CamryData{i}.speed_fts(Camry_decel_interval(1)));
+    CamryMotion{i}.fits.decel.fitted_position_param = <span class="keyword">...</span>
+        polyint(CamryMotion{i}.fits.decel.fitted_velocity_param, <span class="keyword">...</span>
+        CamryData{i}.trip_distanceft(Camry_decel_interval(1)) - <span class="keyword">...</span>
+            CamryData{i}.trip_distanceft(1));
+
+    <span class="comment">% this code checks if the motion actually contains a second idle</span>
+    <span class="comment">% section after the deceleration, if so, then it will fit the</span>
+    <span class="comment">% corresponding parameters as well;</span>
+    <span class="keyword">if</span> isfield(JettaMotion{i}, <span class="string">'second_idle_start_i'</span>)
+        Jetta_idle2_interval = <span class="keyword">...</span>
+            JettaMotion{i}.second_idle_start_i:<span class="keyword">...</span>
+            JettaMotion{i}.second_idle_end_i;
+        JettaMotion{i}.fits.idle2.indices = Jetta_idle2_interval;
+        JettaMotion{i}.fits.idle2.time_start_sec = <span class="keyword">...</span>
+            JettaData{i}.Time_sec(Jetta_idle2_interval(1));
+        tau = JettaData{i}.Time_sec(Jetta_idle2_interval) - <span class="keyword">...</span>
+            JettaMotion{i}.fits.idle2.time_start_sec;
+        JettaMotion{i}.fits.idle2.duration_sec = tau(end);
+        JettaMotion{i}.fits.idle2.fitted_accel_param = 0;
+        JettaMotion{i}.fits.idle2.fitted_velocity_param = 0;
+        JettaMotion{i}.fits.idle2.fitted_position_param = <span class="keyword">...</span>
+            JettaData{i}.trip_distanceft(Jetta_idle2_interval(1)) - <span class="keyword">...</span>
+                JettaData{i}.trip_distanceft(1);
+    <span class="keyword">end</span>
+
+    <span class="keyword">if</span> isfield(CamryMotion{i}, <span class="string">'second_idle_start_i'</span>)
+        Camry_idle2_interval = <span class="keyword">...</span>
+            CamryMotion{i}.second_idle_start_i:<span class="keyword">...</span>
+            CamryMotion{i}.second_idle_end_i;
+        CamryMotion{i}.fits.idle2.indices = Camry_idle2_interval;
+        CamryMotion{i}.fits.idle2.time_start_sec = <span class="keyword">...</span>
+            CamryData{i}.Time_sec(Camry_idle2_interval(1));
+        tau = CamryData{i}.Time_sec(Camry_idle2_interval) - <span class="keyword">...</span>
+            CamryMotion{i}.fits.idle2.time_start_sec;
+        CamryMotion{i}.fits.idle2.duration_sec = tau(end);
+        CamryMotion{i}.fits.idle2.fitted_accel_param = 0;
+        CamryMotion{i}.fits.idle2.fitted_velocity_param = 0;
+        CamryMotion{i}.fits.idle2.fitted_position_param = <span class="keyword">...</span>
+            CamryData{i}.trip_distanceft(Camry_idle2_interval(1)) - <span class="keyword">...</span>
+                CamryData{i}.trip_distanceft(1);
+    <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+</pre>
+<h2 id="4">Save only the updated motion structures;</h2>
+<p>"-append" will check if the variables already exist in those original files, if so, their saved values will be replaced by new values, if not, then the new variables will be added to the file, this may prevent some accidential value overwrites or sometimes accidential naming inconsistency that results in too many variables in a worksapce;</p>
+<pre class="codeinput">save(<span class="string">"DataParser.mat"</span>, <span class="string">"JettaMotion"</span>, <span class="string">"CamryMotion"</span>, <span class="string">"-append"</span>);
+</pre>
+<p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2024b</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%% Modling script for all data, stores all the fitted paramters
+
+% Author: Jiale Jiang
+% Editor: Jiale Jiang
+
+%% Load all the needed variables and workspaces
+load("DataParser.mat", "JettaData", "CamryData", ...
+    "JettaMotion", "CamryMotion");
+%% Motion fits: acceleration degree 1, velocity degree 2, position degree 3
+
+% since there are a lot of obvious signs in our raw data plots that the
+% acceleration are actually linear, not constant in our tested courses, so
+% I decided to use linear acceleration, quadratic velocity and 3rd order
+% position for our model, more details will be shown in our final report;
+
+% Coefficients use elapsed time: tau = time - time_start_sec.
+% elapsed time means the actual time that has passed when a motion phase
+% start, for example, idle maybe from 0-10 sec, and acceleration starts
+% from 10 - 15sec, but when we fit our model, we want to fit it locally, so
+% if we are at 12 sec, then the actual acceleration time will be 2 sec,
+% this will give us more accurate fit for the model;
+
+% Units: seconds, ft/s^2, ft/s, and distance in ft from the trial start.
+
+% use a for loop
+for i = 1:3
+    % adding new struct members;
+    JettaMotion{i}.fits = struct();
+    CamryMotion{i}.fits = struct();
+
+    % Initial idle: zero acceleration/speed and constant position
+
+    % these intervals come from our motiondetection function, it was called
+    % in the DataParser.m script file;
+
+    % These following two lines are just used to wrap those intervals so we
+    % can use them easier in the vector without having to write a long line
+    % just for a vector's interval;
+    Jetta_idle1_interval = ...
+        JettaMotion{i}.idle_start_i:JettaMotion{i}.idle_end_i;
+    JettaMotion{i}.fits.idle1.indices = Jetta_idle1_interval;
+
+    JettaMotion{i}.fits.idle1.time_start_sec = ...
+        JettaData{i}.Time_sec(Jetta_idle1_interval(1));
+
+    % compute the actual elapsed time in this motion phase(idle)
+    tau = JettaData{i}.Time_sec(Jetta_idle1_interval) - ...
+        JettaMotion{i}.fits.idle1.time_start_sec;
+    JettaMotion{i}.fits.idle1.duration_sec = tau(end);
+
+    % we use constant position, 0 accel and velocity ,
+    % during the initial idle of the car, at
+    % that time, the car didn't start moving yet;
+    JettaMotion{i}.fits.idle1.fitted_accel_param = 0;
+
+    JettaMotion{i}.fits.idle1.fitted_velocity_param = 0;
+    
+    % this line is to calculate the constant displacement of the car ,
+    % during its idling
+    JettaMotion{i}.fits.idle1.fitted_position_param = ...
+        JettaData{i}.trip_distanceft(Jetta_idle1_interval(1)) - ...
+            JettaData{i}.trip_distanceft(1);
+
+    % repeat the same idle modling for Camry
+    Camry_idle1_interval = ...
+        CamryMotion{i}.idle_start_i:CamryMotion{i}.idle_end_i;
+    CamryMotion{i}.fits.idle1.indices = Camry_idle1_interval;
+    CamryMotion{i}.fits.idle1.time_start_sec = ...
+        CamryData{i}.Time_sec(Camry_idle1_interval(1));
+    tau = CamryData{i}.Time_sec(Camry_idle1_interval) - ...
+        CamryMotion{i}.fits.idle1.time_start_sec;
+    CamryMotion{i}.fits.idle1.duration_sec = tau(end);
+    CamryMotion{i}.fits.idle1.fitted_accel_param = 0;
+    CamryMotion{i}.fits.idle1.fitted_velocity_param = 0;
+    CamryMotion{i}.fits.idle1.fitted_position_param = ...
+        CamryData{i}.trip_distanceft(Camry_idle1_interval(1)) - ...
+            CamryData{i}.trip_distanceft(1);
+
+    % Acceleration
+    Jetta_accel_interval = ...
+        JettaMotion{i}.accel_start_i:JettaMotion{i}.accel_end_i;
+
+    JettaMotion{i}.fits.accel.indices = Jetta_accel_interval;
+
+    JettaMotion{i}.fits.accel.time_start_sec = ...
+        JettaData{i}.Time_sec(Jetta_accel_interval(1));
+
+    tau = JettaData{i}.Time_sec(Jetta_accel_interval) - ...
+        JettaMotion{i}.fits.accel.time_start_sec;
+
+    JettaMotion{i}.fits.accel.duration_sec = tau(end);
+    
+    % this line fits the acceleration using first order in the local motion
+    % phase interval;
+    JettaMotion{i}.fits.accel.fitted_accel_param = ...
+        polyfit(tau, JettaData{i}.filtered_accel(Jetta_accel_interval), 1);
+
+    JettaMotion{i}.fits.accel.fitted_velocity_param = ...
+        polyint(JettaMotion{i}.fits.accel.fitted_accel_param, ...
+        JettaData{i}.speed_fts(Jetta_accel_interval(1)));
+
+    JettaMotion{i}.fits.accel.fitted_position_param = ...
+        polyint(JettaMotion{i}.fits.accel.fitted_velocity_param, ...
+        JettaData{i}.trip_distanceft(Jetta_accel_interval(1)) - ...
+            JettaData{i}.trip_distanceft(1));
+
+    Camry_accel_interval = ...
+        CamryMotion{i}.accel_start_i:CamryMotion{i}.accel_end_i;
+
+    CamryMotion{i}.fits.accel.indices = Camry_accel_interval;
+
+    CamryMotion{i}.fits.accel.time_start_sec = ...
+        CamryData{i}.Time_sec(Camry_accel_interval(1));
+
+    tau = CamryData{i}.Time_sec(Camry_accel_interval) - ...
+        CamryMotion{i}.fits.accel.time_start_sec;
+
+    CamryMotion{i}.fits.accel.duration_sec = tau(end);
+
+    CamryMotion{i}.fits.accel.fitted_accel_param = ...
+        polyfit(tau, CamryData{i}.filtered_accel(Camry_accel_interval), 1);
+
+    CamryMotion{i}.fits.accel.fitted_velocity_param = ...
+        polyint(CamryMotion{i}.fits.accel.fitted_accel_param, ...
+        CamryData{i}.speed_fts(Camry_accel_interval(1)));
+
+    CamryMotion{i}.fits.accel.fitted_position_param = ...
+        polyint(CamryMotion{i}.fits.accel.fitted_velocity_param, ...
+        CamryData{i}.trip_distanceft(Camry_accel_interval(1)) - ...
+            CamryData{i}.trip_distanceft(1));
+
+    % this line first assign the deceleration end point as the end of
+    % motion point, if the car does not stop and idle after deceleration
+    Jetta_decel_end = numel(JettaData{i}.Time_sec);
+
+    % this if checks if the JettaMotion actually contains a deceleration
+    % end point, if it does, then it will assign the deceleration end point
+    % back to the original end point calculated from the motion detection
+    % code;
+    % reason for this is that some car does not stop at 0 after decl and
+    % idle so the motion detection function cannot detect when the car
+    % stops its deceleration, so then the deceleration end point will just
+    % set to be the end of the motion;
+    if isfield(JettaMotion{i}, 'decel_end_i')
+        Jetta_decel_end = JettaMotion{i}.decel_end_i;
+    end
+
+    Jetta_decel_interval = JettaMotion{i}.decel_start_i:Jetta_decel_end;
+
+    JettaMotion{i}.fits.decel.indices = Jetta_decel_interval;
+
+    JettaMotion{i}.fits.decel.time_start_sec = ...
+        JettaData{i}.Time_sec(Jetta_decel_interval(1));
+
+    tau = JettaData{i}.Time_sec(Jetta_decel_interval) - ...
+        JettaMotion{i}.fits.decel.time_start_sec;
+
+    JettaMotion{i}.fits.decel.duration_sec = tau(end);
+
+    JettaMotion{i}.fits.decel.fitted_accel_param = ...
+        polyfit(tau, JettaData{i}.filtered_accel(Jetta_decel_interval), 1);
+
+    JettaMotion{i}.fits.decel.fitted_velocity_param = ...
+        polyint(JettaMotion{i}.fits.decel.fitted_accel_param, ...
+        JettaData{i}.speed_fts(Jetta_decel_interval(1)));
+
+    JettaMotion{i}.fits.decel.fitted_position_param = ...
+        polyint(JettaMotion{i}.fits.decel.fitted_velocity_param, ...
+        JettaData{i}.trip_distanceft(Jetta_decel_interval(1)) - ...
+            JettaData{i}.trip_distanceft(1));
+    
+    % same logic for Camry
+    Camry_decel_end = numel(CamryData{i}.Time_sec);
+    if isfield(CamryMotion{i}, 'decel_end_i')
+        Camry_decel_end = CamryMotion{i}.decel_end_i;
+    end
+
+    Camry_decel_interval = CamryMotion{i}.decel_start_i:Camry_decel_end;
+    CamryMotion{i}.fits.decel.indices = Camry_decel_interval;
+    CamryMotion{i}.fits.decel.time_start_sec = ...
+        CamryData{i}.Time_sec(Camry_decel_interval(1));
+    tau = CamryData{i}.Time_sec(Camry_decel_interval) - ...
+        CamryMotion{i}.fits.decel.time_start_sec;
+    CamryMotion{i}.fits.decel.duration_sec = tau(end);
+    CamryMotion{i}.fits.decel.fitted_accel_param = ...
+        polyfit(tau, CamryData{i}.filtered_accel(Camry_decel_interval), 1);
+    CamryMotion{i}.fits.decel.fitted_velocity_param = ...
+        polyint(CamryMotion{i}.fits.decel.fitted_accel_param, ...
+        CamryData{i}.speed_fts(Camry_decel_interval(1)));
+    CamryMotion{i}.fits.decel.fitted_position_param = ...
+        polyint(CamryMotion{i}.fits.decel.fitted_velocity_param, ...
+        CamryData{i}.trip_distanceft(Camry_decel_interval(1)) - ...
+            CamryData{i}.trip_distanceft(1));
+    
+    % this code checks if the motion actually contains a second idle
+    % section after the deceleration, if so, then it will fit the
+    % corresponding parameters as well;
+    if isfield(JettaMotion{i}, 'second_idle_start_i')
+        Jetta_idle2_interval = ...
+            JettaMotion{i}.second_idle_start_i:...
+            JettaMotion{i}.second_idle_end_i;
+        JettaMotion{i}.fits.idle2.indices = Jetta_idle2_interval;
+        JettaMotion{i}.fits.idle2.time_start_sec = ...
+            JettaData{i}.Time_sec(Jetta_idle2_interval(1));
+        tau = JettaData{i}.Time_sec(Jetta_idle2_interval) - ...
+            JettaMotion{i}.fits.idle2.time_start_sec;
+        JettaMotion{i}.fits.idle2.duration_sec = tau(end);
+        JettaMotion{i}.fits.idle2.fitted_accel_param = 0;
+        JettaMotion{i}.fits.idle2.fitted_velocity_param = 0;
+        JettaMotion{i}.fits.idle2.fitted_position_param = ...
+            JettaData{i}.trip_distanceft(Jetta_idle2_interval(1)) - ...
+                JettaData{i}.trip_distanceft(1);
+    end
+
+    if isfield(CamryMotion{i}, 'second_idle_start_i')
+        Camry_idle2_interval = ...
+            CamryMotion{i}.second_idle_start_i:...
+            CamryMotion{i}.second_idle_end_i;
+        CamryMotion{i}.fits.idle2.indices = Camry_idle2_interval;
+        CamryMotion{i}.fits.idle2.time_start_sec = ...
+            CamryData{i}.Time_sec(Camry_idle2_interval(1));
+        tau = CamryData{i}.Time_sec(Camry_idle2_interval) - ...
+            CamryMotion{i}.fits.idle2.time_start_sec;
+        CamryMotion{i}.fits.idle2.duration_sec = tau(end);
+        CamryMotion{i}.fits.idle2.fitted_accel_param = 0;
+        CamryMotion{i}.fits.idle2.fitted_velocity_param = 0;
+        CamryMotion{i}.fits.idle2.fitted_position_param = ...
+            CamryData{i}.trip_distanceft(Camry_idle2_interval(1)) - ...
+                CamryData{i}.trip_distanceft(1);
+    end
+
+end
+
+%% Save only the updated motion structures; 
+% "-append" will check if the variables already exist in those original
+% files, if so, their saved values will be replaced by new values, if not,
+% then the new variables will be added to the file, this may prevent some
+% accidential value overwrites or sometimes accidential naming
+% inconsistency that results in too many variables in a worksapce;
+save("DataParser.mat", "JettaMotion", "CamryMotion", "-append");
+
+##### SOURCE END #####
+-->
+</body>
+</html>

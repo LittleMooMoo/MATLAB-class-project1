@@ -1,13 +1,30 @@
+%% Data Parser script
+
 % Author: Jiale Jiang
 % Editor: Jiale Jiang(self-edited)
+
+%% Program Purpose:
+% parse all raw data into more organized struct fields and cell arrays for
+% better human readablity, then do some neccessary
+% calculation/analysis/unit conversion to clean up the data
+% then plot all required data plots for the final deliverable, all plots
+% will be exported and saved into the designated folder;
+
+%% Load all the saved variables in the workspace
 clearvars;
 load("JettaData.mat");
 load("CamryData.mat");
 
+% These boolean flags were initially used to manually select which plot to
+% plot, later on these flags are automated by a for loop I made to plot all
+% plots one by one without having to do it manually.
+
 print_jetta_table = 0;
 print_camry_table = 0;
+show_ave_idle_rpms = 1;
+plotting_enabled = 0;
 
-plot_camry_accel = 1;
+plot_camry_accel = 0;
 plot_camry_raw_accel = 0;
 plot_camry_vel = 0;
 plot_camry_filtered_vel = 0;
@@ -63,7 +80,7 @@ newNameCamry = ["Time_sec","EngineRPM_rpm","VehicleSpeed_MPH",...
 JettaData = parsingData(newNameJetta,RawJettaData);
 CamryData = parsingData(newNameCamry,RawCamryData);
 
-% unit conversion
+% some unit conversion
 JettaData = convertUnits(JettaData);
 CamryData = convertUnits(CamryData);
 for i = 1:3
@@ -74,6 +91,8 @@ for i = 1:3
         JettaData{i}.InstantFuelEcon_MPG)./3600;
 end
 
+% This is to create a vector of consistent color for each trial and help
+% with legend writing
 JettaTrialColors = ["b","r","c"];
 CamryTrialColors = ["b","r","c"];
 TrialLegends = ["Trial 1","Trial 2","Trial 3"];
@@ -90,10 +109,13 @@ end
 
 %% 3. Data Presentation as table output in MATLAB terminal
 
-% a. 2022 Volkswagen Jetta SE;
+% a. 2022 Volkswagen Jetta SE and 2024 Toyota Camry SE
 % Test Procedure: 1)Park at a relatively flat parking lot;
 %                 2)Accelerate the car from 0-35 mph;
 %                 3)Once reach 35 mph,deccelerate the car to 0 mph safely;
+
+% These table print out are only for the OBD2 data collection assignment,
+% disabled for the project data analysis by the flag;
 if print_jetta_table == 1
     printJettaDataTable(JettaData);
 end
@@ -147,6 +169,7 @@ function table = printJettaDataTable(Datacell)
     end
 end
 
+% a similar table printing function to print data tables
 function table = printCamryDataTable(Datacell)
     for i = 1:size(Datacell,2)
         fprintf("\nCamry Trial %d\n",i);
@@ -186,24 +209,64 @@ function Datacell_unit_converted = convertUnits(Datacell)
 end
 
 %% Calculating acceleration with Kalman Filter
+% I made the Kalman Filter function in another script file and saved it as
+% a function file only, more details about Kalman Filter will be showed in
+% the final report and my comments in the actual function;
+
+% motion detection function is also written by me to use some simple speed
+% detection logic to identify the idle, acceleration and deceleration
+% sections of the data, it does not work perfectly, but it work good enough
+% to give us good data, you will see it in the graphs;
+
 % acceleration calculation and motion detection
+
+% Jetta/Camry motions are cell array to contain the returned indices of the
+% motion section, for example, if the idle time of a car is 0-6 sec, then
+% the cell array will use its internal struct field to contain the
+% corresponding indices, and so we can use those indices to find the
+% corresponding sections of our desired motion (accel or decel or idle)
+% more comments about this motion detection function will be seen in our
+% motion detection function file
+
 JettaMotion = cell(1,3);
 CamryMotion = cell(1,3);
+
+% very classic for loop, just used so that we don't have to call it one by
+% one,
+
+% logic is simple, for each car's each trial, we parse the needed argument
+% into the kalmand filter function, then we parse its returned speed and
+% accel back into each of our cell array's struct field for more organized
+% data storage;
+
+% the cumtrapz() function is used to integrate the distance traveled from
+% speed, it will use the mean velocity approximation as the instaneous
+% velocity between two time stamp, then do discrete integration to find the
+% accumulated distance traveled in each trial, we only used this on Camry
+% since we didn't record its distance traveled data;
+
 for i = 1:3
+    % call Kalman Filter 
     filtered_camry_data = ...
         SpeedKalmanFilter(CamryData{i}.Time_sec,...
         CamryData{i}.speed_fts);
+    % save results in struct fields
     CamryData{i}.filtered_speed = filtered_camry_data.filtered_speed;
     CamryData{i}.filtered_accel = filtered_camry_data.predicted_accel;
     
+    % call the cumtrapz to integrate the distance from speed
     CamryData{i}.trip_distanceft = cumtrapz(CamryData{i}.Time_sec,...
         CamryData{i}.speed_fts);
+    % save results in struct fields
     CamryData{i}.filtered_trip_distnaceft = ...
         cumtrapz(CamryData{i}.Time_sec,...
         CamryData{i}.filtered_speed);
+    % call the cumtrapz to integrate cumulated fuel usage and save in
+    % struct field
     CamryData{i}.cumulated_fuel_lb = ...
         cumtrapz(CamryData{i}.Time_sec,CamryData{i}.fuelrate_lbs);
 
+    % call Kalman Filter for Jetta
     filtered_jetta_data = SpeedKalmanFilter(JettaData{i}.Time_sec,...
         JettaData{i}.speed_fts);
 
@@ -211,13 +274,42 @@ for i = 1:3
         filtered_jetta_data.predicted_accel;
     JettaData{i}.filtered_speed = ...
         filtered_jetta_data.filtered_speed;
+
+    % call motion detection function, and save all objects that contains 
+    % indices into a struct field.
     JettaMotion{i} = detectMotionSections(JettaData{i}.speed_fts);
     CamryMotion{i} = detectMotionSections(CamryData{i}.speed_fts);
+
+    JettaData{i}.trial_ave_idle_rpm = ...
+        mean(JettaData{i}.EngineRPM_rpm(JettaMotion{i}.idle_start_i:...
+        JettaMotion{i}.idle_end_i));
+
+    if show_ave_idle_rpms == true
+        fprintf("Trial %d: \n",i);
+        fprintf("Jetta trial ave rpm: %.2f\n",...
+            JettaData{i}.trial_ave_idle_rpm);
+    end
+
+    speed = CamryData{i}.VehicleSpeed_MPH;
+    rpm = CamryData{i}.EngineRPM_rpm;
+
+    % select idle rpm where rpm is less than 900
+    idle = rpm < 900;
+
+    CamryData{i}.engine_running_idle_rpm = mean(rpm(idle));
+
+    fprintf("Camry trial %d idle RPM: %.2f\n", ...
+        i, CamryData{i}.engine_running_idle_rpm);
 end
 
 %% Plot recorded trials (three trials on each graph)
-save_folder = fullfile(fileparts(mfilename('fullpath')), ...
-    "New plots and reports");
+
+% this folder is for saving all the plots automatically;
+save_folder = ...
+    "C:\Users\jiaxi\OneDrive\Documentos\GitHub\MATLAB-class-project1\MOOMOO_CODE\New plots and reports";
+
+% this is a vector containing all the file name for the plots, I hate
+% typing all this, but it makes it easier later in the for loop
 plot_filenames = [
     "CamryPos3Trial.png"
     "CamryVel3Trial.png"
@@ -253,8 +345,20 @@ plot_filenames = [
     "JettaFuelUsed3Trial.png"
 ];
 
-for graph = 1:numel(plot_filenames)
-    % Select one graph, then plot all three trials.
+% this for loop will plot all the plots stated above, then save into the
+% folder required;
+
+% numel(plot_filenames) returns the size of the vector, it has 32 plots in
+% total, so this just means 1:32
+if plotting_enabled == 1
+    for graph = 1:numel(plot_filenames)
+    % for each of these statements, logic is like this:
+    % "graph" will scan from 1 to 32, and for each of the assigment below,
+    % it will first compare, if the graph is corresponding value, if it is,
+    % then the graph == corresponding value returns 1, which turns the
+    % plotting flag on, if not, it returns 0, which turns the plotting flag
+    % off, so when the "graph" scan thru 1 to 32, it will plot each plot
+    % once;
     plot_camry_pos = (graph == 1);
     plot_camry_vel = (graph == 2);
     plot_camry_raw_accel = (graph == 3);
@@ -287,10 +391,15 @@ for graph = 1:numel(plot_filenames)
     plot_jetta_rpmvel_idle2 = (graph == 30);
     plot_jetta_fuelratetime = (graph == 31);
     plot_jetta_fuelused = (graph == 32);
-
+    
+    % opens a window for plotting a plot;
     fig = figure;
+    
+    % this following for loop is just to loop thru trial 1 to trial 3 for
+    % each car's test data, and it will plot 3 trials on 1 plot for more
+    % compact plotting, and whether it will be plotted or not will be
+    % controlled by that if-statement in fron of each plotting code;
 
-    trial_colors = lines(3);
     for i = 1:3
         % Camry: Distance vs time
         if plot_camry_pos
@@ -859,19 +968,30 @@ for graph = 1:numel(plot_filenames)
             legend(TrialLegends,'Location','best');
         end
     end
-
+    
+    % this if statement will check if the plots actually contains lines,
+    % for example, for some trials, the car does not stop at 0 MPH, so our
+    % motion detection code cannot detect a second idle duration, so the
+    % plot will be empty, this if statement account for that and skip the
+    % exporting of that plot; "~" means "not"
     if ~isempty(findobj(fig,'Type','line'))
+        % if plot not empty ,export the plots to our previous stated folder;
         exportgraphics(fig, fullfile(save_folder,...
             plot_filenames(graph)), ...
             'Resolution',300);
     else
+        % if plot is empty, skip the plot and show the skipped file;
         fprintf('Skipped %s: no data for this section.\n',...
             plot_filenames(graph));
     end
+    % close this window so that we can reopen another window for plotting
+    % another plot, so we don't have to have 32 windows popping up when
+    % running this code, it will just open, save, close one by one;
     close(fig);
+    end
 end
 
-%%
+%% Save the workspace and its variables;
 save("JettaData.mat");
 save("CamryData.mat");
 

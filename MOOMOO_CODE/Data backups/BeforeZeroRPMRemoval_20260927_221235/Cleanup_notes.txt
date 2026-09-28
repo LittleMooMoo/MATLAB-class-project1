@@ -1,0 +1,25 @@
+Camry zero-RPM row removal, 2026-09-27
+
+These backups preserve the workspaces and scripts before the requested cleanup.
+The original CSV files were not changed.
+
+Removed complete rows where EngineRPM_rpm was exactly zero (numeric column 2).
+Trial 1: 481 original rows, 9 removed, 472 retained.
+Trial 2: 510 original rows, 9 removed, 501 retained.
+Trial 3: 457 original rows, 9 removed, 448 retained.
+All removed rows were original rows 1-9. Every remaining value and timestamp
+was verified equal to the corresponding original row; times were not reset.
+
+The cleaned trials start moving at 1.86411 mph, not at initial idle.
+detectMotionSections.m received a small boundary check to avoid speed(0)
+and represent missing initial idle with an empty index range (1:0).
+Initial idle RPM means therefore return NaN rather than a fabricated RPM.
+
+DataParser.m ran successfully with its existing plotting_enabled = 0.
+Its normal save commands updated both CamryData.mat and JettaData.mat.
+Jetta source records and DataParser.m are unchanged. I did not edit
+SpeedKalmanFilter.m; its file hash changed independently during this task.
+
+DataParser.mat, fitted/predicted model results, reports, and plots were not
+updated. Before using cleaned data in downstream fitting, handle absent
+initial idle in DataModle.m and refresh the modeling workspace consistently.
