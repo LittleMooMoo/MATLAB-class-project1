@@ -34,16 +34,19 @@ const_time = 30;
 time_accel = 15;
 const_accel = 20/time_accel;
 const_speed = 20;
-accel_fuel_rate = total_fuel/time_accel; %gal/sec
 total_fuel = 0.2;
+accel_time = 0:dt:time_accel;
+accel_fuel_rate = total_fuel/time_accel; %gal/sec
+
 accel_fuel_over_time = total_fuel - total_fuel ...
     .* exp(-accel_fuel_rate .* accel_time);
+
 
 const_motion_time = 0:dt:const_time;
 const_motion = Motion(const_motion_time,"HOLDSPEED",0,const_speed,1);
 const_motion.rpm = 888 .* ones(size(const_motion_time));
 
-accel_time = 0:dt:time_accel;
+
 accel_motion = Motion(accel_time,"ACCEL",const_accel,0,0);
 
 subplot(3,2,1);
