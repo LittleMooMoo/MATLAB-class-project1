@@ -1,4 +1,4 @@
-%% Rpi code 
+b%% Rpi code 
 % initially, clc and clear to clear all the previous rpi and sensehat
 % object in case we encounter duplicate connection error;
 clc;
